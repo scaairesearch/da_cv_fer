@@ -8,29 +8,57 @@ from torchvision.datasets import ImageFolder # for datasets (reference: Sai's us
 from torch.utils.data import Dataset
 import torch
 
+# class OneHotSFEWDataset(Dataset):
+#     def __init__(self, root, transform = None) -> None:
+#         super().__init__()
+#         self.image_folder = ImageFolder(root, transform)
+#         self.class_labels = self.image_folder.classes
+#         self.one_hot_labels = self.get_one_hot_labels()
+    
+#     def __len__(self):
+#         return len(self.image_folder)
+
+#     def __getitem__(self, idx):
+#         image, label = self.image_folder[idx]
+#         one_hot_label = self.one_hot_labels[idx]
+#         image_name = self.image_folder.imgs[idx][0]
+#         return image, one_hot_label, image_name
+
+#     def get_one_hot_labels(self):
+#         one_hot_labels = []
+#         for _, label in self.image_folder:
+#             one_hot = torch.zeros(len(self.class_labels))
+#             one_hot[label] = 1
+#             one_hot_labels.append(one_hot)
+#         return torch.stack(one_hot_labels)
+    
 class OneHotSFEWDataset(Dataset):
     def __init__(self, root, transform = None) -> None:
         super().__init__()
         self.image_folder = ImageFolder(root, transform)
         self.class_labels = self.image_folder.classes
-        self.one_hot_labels = self.get_one_hot_labels()
+        # self.one_hot_labels = self.get_one_hot_labels()
     
     def __len__(self):
         return len(self.image_folder)
 
     def __getitem__(self, idx):
         image, label = self.image_folder[idx]
-        one_hot_label = self.one_hot_labels[idx]
+        one_hot_label = torch.zeros(len(self.class_labels))
+        one_hot_label[label]=1
+
+        # one_hot_label = self.one_hot_labels[idx]
+
         image_name = self.image_folder.imgs[idx][0]
         return image, one_hot_label, image_name
 
-    def get_one_hot_labels(self):
-        one_hot_labels = []
-        for _, label in self.image_folder:
-            one_hot = torch.zeros(len(self.class_labels))
-            one_hot[label] = 1
-            one_hot_labels.append(one_hot)
-        return torch.stack(one_hot_labels)
+    # def get_one_hot_labels(self):
+    #     one_hot_labels = []
+    #     for _, label in self.image_folder:
+    #         one_hot = torch.zeros(len(self.class_labels))
+    #         one_hot[label] = 1
+    #         one_hot_labels.append(one_hot)
+    #     return torch.stack(one_hot_labels)
 
 class DatasetSFEW():
     def __init__(self) -> None:
