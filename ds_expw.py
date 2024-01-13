@@ -12,6 +12,7 @@ import shutil # for copying files
 import os
 from utils import extract_zip_files
 
+
 class DatasetEXPW(Dataset):
     def __init__(self, train = True, transform=None) -> None:
         
@@ -129,6 +130,7 @@ class EXPW():
         self.origin_file_path = self.dataconfig.GDRIVE_EXPW_FILE_PATH
         self.extract_path = self.dataconfig.EXPW_EXTRACT_PATH
         self.destination_file_path = self.dataconfig.EXPW_ZIP_FILE_PATH
+        self.base_path = self.dataconfig.EXPW_BASE_PATH
         
         print(f'desitination file path = {self.destination_file_path}')
 
@@ -167,7 +169,7 @@ class EXPW():
             else:
                 try:
                     od.download(self.dataconfig.EXPW_LINK,
-                                data_dir=self.extract_path,
+                                data_dir=self.base_path, # self.extract_path,
                                 keep_archive=True,
                                 force=True,)
                     print(f"File downloaded successfully from {self.dataconfig.EXPW_LINK} to {self.destination_file_path}")
