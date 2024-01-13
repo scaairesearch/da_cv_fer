@@ -169,7 +169,7 @@ class EXPW():
                     print(f'Error: Not able to copy from {self.origin_file_path} to {self.destination_file_path}')
             
             else:
-                if not self.data_path and not self.label_path:
+                if not os.path.exists(self.data_path) and os.path.exists(not self.label_path):
                     try:
                         od.download(self.dataconfig.EXPW_LINK,
                                     data_dir=self.base_path, # self.extract_path,
