@@ -8,6 +8,9 @@ import random # for random image index
 from PIL import Image
 import torchvision.transforms as transforms # transformation with respect to mean, std, 3 channel
 import torch
+import shutil # for copying files
+import os
+from utils import extract_zip_files
 
 class DatasetEXPW(Dataset):
     def __init__(self, train = True, transform=None) -> None:
@@ -30,8 +33,11 @@ class DatasetEXPW(Dataset):
         else:
             print(f'Directory {expw_extract_dir} already exists.')
 
-        if len(list(expw_extract_dir.glob("*"))) == 0: # checking if the zip files exists
-            od.download(dataset_id_or_url=expw_link, data_dir=str(expw_data_dir), force=True) 
+        # if len(list(expw_extract_dir.glob("*"))) == 0: # checking if the zip files exists
+        #     od.download(dataset_id_or_url=expw_link, data_dir=str(expw_data_dir), force=True)
+        # else:
+        #     print(f'zip file already present in Directory {expw_data_dir}.')
+
         # if len(list(expw_data_dir.glob("*"))) == 0: # checking if the zip files exists
         #     od.download(dataset_id_or_url=expw_link, data_dir=str(expw_data_dir), force=True)
 
@@ -70,8 +76,13 @@ class DatasetEXPW(Dataset):
         num_train=int(len(image_label_dict)*0.8)
         num_val=total_im-num_train
 
-        full_list_dict=list(image_label_dict.items())
+        full_list_dict = list(image_label_dict.items())
         random.shuffle(full_list_dict)
+
+        # print(full_list_dict[:30])
+
+
+
 
         # self.train_list_dict = full_list_dict[:num_train]
         # self.val_list_dict = full_list_dict[num_train:num_train+num_val]
@@ -103,7 +114,7 @@ class DatasetEXPW(Dataset):
             img = self.transform(img)
         
         # return img, label
-        return img, label_onehot
+        return img, label_onehot, img_name
     
     def __len__(self):   
         return len(self.list_img_label)
@@ -113,6 +124,69 @@ class EXPW():
     def __init__(self,mean_ds = None, std_dev_ds=None, BATCH_SIZE = None):
 
         self.dataconfig = DataConfig()
+
+        # 1 download data
+        self.origin_file_path = self.dataconfig.GDRIVE_EXPW_FILE_PATH
+        self.extract_path = self.dataconfig.EXPW_EXTRACT_PATH
+        self.destination_file_path = self.dataconfig.EXPW_ZIP_FILE_PATH
+        
+        print(f'desitination file path = {self.destination_file_path}')
+
+        if not self.dataconfig.IN_COLAB:
+            if os.path.exists(self.origin_file_path):
+                print(f'origin file path = {self.origin_file_path} exists')
+            else:
+                print(f'origin file path = {self.origin_file_path} does NOT exist')
+        
+
+
+    
+        # if the zip file is not there in destination, we have to download/copy it and laterunzip it
+        if not os.path.exists(self.destination_file_path):
+            # if extract path is not there, we need to create 
+            if not self.extract_path.exists():
+                # Create the directory
+                print( "in EXPW()...")
+                self.extract_path.mkdir(parents=True, exist_ok=True)
+                print(f'Directory {self.extract_path} created successfully.')
+            else:
+                print(f'Directory {self.extract_path} already exists.')
+        
+             # copy the contents from origin to destination, if file is not there in destination
+            
+            if not self.dataconfig.IN_COLAB:
+                try:
+                    print(f"Starting File copying from {self.origin_file_path} to {self.destination_file_path}")
+                    shutil.copy(self.origin_file_path,self.destination_file_path)
+                    print(f"File copied successfully from {self.origin_file_path} to {self.destination_file_path}")
+                except FileNotFoundError as e:
+                    print(f'Error : {e}')
+                except:
+                    print(f'Error: Not able to copy from {self.origin_file_path} to {self.destination_file_path}')
+            
+            else:
+                try:
+                    od.download(self.dataconfig.EXPW_LINK,
+                                data_dir=self.extract_path,
+                                keep_archive=True,
+                                force=True,)
+                    print(f"File downloaded successfully from {self.dataconfig.EXPW_LINK} to {self.destination_file_path}")
+                except:
+                     print(f'Error: Not able to download from {self.dataconfig.EXPW_LINK} to {self.destination_file_path}')
+
+        
+        #2 extract data
+        # check if the file is already extracted, extracting it
+        extract_zip_files(self.extract_path,self.extract_path)
+        
+
+                
+            
+        # check if the folders are already present
+        
+
+
+
         if BATCH_SIZE is None:
             self.BATCH_SIZE = self.dataconfig.EXPW_BATCH_SIZE
         else:
@@ -131,6 +205,8 @@ class EXPW():
         self.train_transforms = None
         self.val_transforms = None
         self.train_loader, self.val_loader = None, None
+
+    
 
     def get_dataset(self):
         # Train Phase transformations
@@ -257,35 +333,35 @@ if __name__ =='__main__':
 
     # utils.show_batch(expw_train_loader,dataset.labels,2)
 
-    #%% 
-    import utils
-    from torchvision.transforms import transforms
-    from ds_expw import DatasetEXPW
-    from data_config import DataConfig
-    from torch.utils.data import Dataset, DataLoader
-    expw_mean_ds = [0.3917, 0.3120, 0.2759]
-    expw_std_dev_ds =[0.2205, 0.2134, 0.2277]
-    expw_train_transforms = transforms.Compose([
-                                        transforms.Resize((224, 224)),
-                                        #  transforms.RandomCrop(224, padding=10, padding_mode='reflect'),
-                                        #  transforms.RandomHorizontalFlip(),
-                                        #  transforms.RandomRotation(5),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
-                                        ])
-    expw_train_ds = DatasetEXPW(train= True, transform=expw_train_transforms)
-    dataconfig = DataConfig()
-    BATCH_SIZE = 4
-    dataloader_args = dict(shuffle=True, batch_size=BATCH_SIZE, num_workers=4, pin_memory=True) if dataconfig.cuda else dict(shuffle=True, batch_size=BATCH_SIZE)
+    # #%% 
+    # import utils
+    # from torchvision.transforms import transforms
+    # from ds_expw import DatasetEXPW
+    # from data_config import DataConfig
+    # from torch.utils.data import Dataset, DataLoader
+    # expw_mean_ds = [0.3917, 0.3120, 0.2759]
+    # expw_std_dev_ds =[0.2205, 0.2134, 0.2277]
+    # expw_train_transforms = transforms.Compose([
+    #                                     transforms.Resize((224, 224)),
+    #                                     #  transforms.RandomCrop(224, padding=10, padding_mode='reflect'),
+    #                                     #  transforms.RandomHorizontalFlip(),
+    #                                     #  transforms.RandomRotation(5),
+    #                                     transforms.ToTensor(),
+    #                                     transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
+    #                                     ])
+    # expw_train_ds = DatasetEXPW(train= True, transform=expw_train_transforms)
+    # dataconfig = DataConfig()
+    # BATCH_SIZE = 4
+    # dataloader_args = dict(shuffle=True, batch_size=BATCH_SIZE, num_workers=4, pin_memory=True) if dataconfig.cuda else dict(shuffle=True, batch_size=BATCH_SIZE)
 
-    # train dataloader
-    expw_train_loader = DataLoader(expw_train_ds, **dataloader_args)
+    # # train dataloader
+    # expw_train_loader = DataLoader(expw_train_ds, **dataloader_args)
 
-    utils.show_batch(expw_train_loader,expw_train_ds.labels,2)
+    # utils.show_batch(expw_train_loader,expw_train_ds.labels,2)
 
-    images, labels = next(iter(expw_train_loader))
-    print(images.shape, labels.shape)
-    print("data labels",labels)
+    # images, labels = next(iter(expw_train_loader))
+    # print(images.shape, labels.shape)
+    # print("data labels",labels)
 
     # %%
     import utils
@@ -295,12 +371,7 @@ if __name__ =='__main__':
     expw_train_loader, expw_val_loader = expw_object.get_dataloader()
     utils.show_batch(expw_train_loader,expw_train_ds.labels,3)
 
-    images, labels = next(iter(expw_train_loader))
-    print(images.shape, labels.shape)
+    images, labels,image_names = next(iter(expw_train_loader))
+    print(images.shape, labels.shape, type(images), type(labels), type(image_names))
     print("data labels",labels)
-
-
-
-
-
-# %%
+    print("image_name\n", image_names)

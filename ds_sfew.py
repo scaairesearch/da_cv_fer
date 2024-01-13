@@ -7,6 +7,7 @@ import torchvision.transforms as transforms # transformation with respect to mea
 from torchvision.datasets import ImageFolder # for datasets (reference: Sai's usage)
 from torch.utils.data import Dataset
 import torch
+from utils import copy_file,extract_zip_files
 
 # class OneHotSFEWDataset(Dataset):
 #     def __init__(self, root, transform = None) -> None:
@@ -66,6 +67,7 @@ class DatasetSFEW():
         
         dataconfig = DataConfig()
         self.BASE_PATH = dataconfig.SFEW_BASE_PATH
+        self.origin_file_path = dataconfig.GDRIVE_SFEW_FILE_PATH
         self.EXTRACT_PATH = dataconfig.SFEW_EXTRACT_PATH
         self.ZIP_FILE_PATH = dataconfig.SFEW_ZIP_FILE_PATH
         self.labels = ['angry','disgust','fear','happy','neutral','sad','surprise']
@@ -74,7 +76,9 @@ class DatasetSFEW():
                              'TEST_DIR' : Path(self.EXTRACT_PATH,'Test'),
                              'VAL_DIR' : Path(self.EXTRACT_PATH,'Val')}
 
-        print(f'self.BASE_PATH -{self.BASE_PATH },self.EXTRACT_DIR-{self.EXTRACT_PATH},self.ZIP_FILE_PATH - {self.ZIP_FILE_PATH} ')
+        
+
+        print(f'self.BASE_PATH -{self.BASE_PATH },\n self.EXTRACT_DIR-{self.EXTRACT_PATH},\n self.ZIP_FILE_PATH - {self.ZIP_FILE_PATH} ')
         
         # 2. Extract data
         self.extract_dataset()
@@ -100,21 +104,29 @@ class DatasetSFEW():
         else:
             print(f'Directory {self.EXTRACT_PATH} already exists.')
 
+
         ## extracting data into EXTRACT_DIR
 
         # Open the zip if files are not unzipped before
         if len(list(self.EXTRACT_PATH.glob("*"))) > 0:
             print(f"Files exist in {self.EXTRACT_PATH}, extraction not done")
         else:
-            print(f"No files found in {self.EXTRACT_PATH}. File extraction is progress")
-            with zipfile.ZipFile(self.ZIP_FILE_PATH,'r') as zip_ref:
-                # printing all the contents of the zip file
-                zip_ref.printdir()
-                # Extract all files to the specified directory
-                zip_ref.extractall(self.EXTRACT_PATH)
-            print("File extraction complete.")
+            # copy the zip file, as nothing exists
+            print(f"No files (including zip file) found in {self.EXTRACT_PATH}.Copying file")
+            copy_file(self.origin_file_path,self.EXTRACT_PATH)
+        
+        # extract the files if not already present
+        extract_zip_files(self.EXTRACT_PATH, self.EXTRACT_PATH)
 
-        # Extracting the files if not extracted before
+
+            # with zipfile.ZipFile(self.ZIP_FILE_PATH,'r') as zip_ref:
+            #     # printing all the contents of the zip file
+            #     zip_ref.printdir()
+            #     # Extract all files to the specified directory
+            #     zip_ref.extractall(self.EXTRACT_PATH)
+            # print("File extraction complete.")
+
+        # Extracting the files within the folder if not extracted before
         if len(list(self.EXTRACT_PATH.glob("*"))) > 0: # checking if the zip files exists 
             for dir_name, dir in self.dict_dataset.items():
                 non_zip_files = [file for file in Path.iterdir(dir) if not file.name.endswith(".zip")]
