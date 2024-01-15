@@ -2,11 +2,19 @@ from pathlib import Path
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import os
 
 class RunConfig:
     def __init__(self) -> None:
         self.EPOCHS = 1
         self.NUM_EPOCHS = 1
+        self.IN_COLAB = False
+        if os.path.exists('/content'): # check for google colab
+            self.IN_COLAB = True
+        
+        if self.IN_COLAB:
+            self.EPOCHS = 10
+            self.NUM_EPOCHS = 10  
         # self.optimizer = None
         self.lr_strategy = None
         self.inital_lr = 0.001
