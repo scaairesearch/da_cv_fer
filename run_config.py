@@ -13,11 +13,11 @@ class RunConfig:
             self.IN_COLAB = True
         
         if self.IN_COLAB:
-            self.EPOCHS = 10
-            self.NUM_EPOCHS = 10  
+            self.EPOCHS = 100
+            self.NUM_EPOCHS = 100  
         # self.optimizer = None
         self.lr_strategy = None
-        self.inital_lr = 0.001
+        self.inital_lr = 0.005
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         self.criterion_class = nn.CrossEntropyLoss() # we are not doing log_softmax or softmax
