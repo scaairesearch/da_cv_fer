@@ -6,7 +6,23 @@ import os
 import zipfile
 from pathlib import Path
 import shutil
+from torchvision.transforms import Normalize
 
+
+def unnormalize(image_tensor, mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]):
+    unnormalize = Normalize(mean=[-m/s for m, s in zip(mean, std)], std=[1/s for s in std])
+    # Apply unnormalization
+    image_tensor_unnormalized = unnormalize(image_tensor)
+
+    # Ensure the values are within the expected range
+    image_tensor_unnormalized[image_tensor_unnormalized > 1] = 1
+    image_tensor_unnormalized[image_tensor_unnormalized < 0] = 0
+
+    return image_tensor_unnormalized
+
+
+
+   
 # def show_batch(dataset_loader,label_names,num_images=5):
 #   '''
 #   shows a batch of images (default = 5)
@@ -36,8 +52,11 @@ def show_batch(dataset_loader,label_names,num_images=5):
   is_one_hot = (targets.sum(dim=-1) == 1).all()
   plt.figure(figsize=(16, 8))
   for i in range(num_images):
+
     ax = plt.subplot(int(num_images//5)+1, 5, i + 1)
-    images[i] = images[i] / 2 + 0.5 # unnormalize, though not the best way
+    print("image tensor: \n",images[i])
+    # images[i] = images[i] / 2 + 0.5 # unnormalize, though not the best way
+    images[i] = unnormalize(images[i]) # created new function
     ax.imshow(images[i].permute(1, 2, 0))
     if is_one_hot:
       label_index = torch.argmax(targets[i], dim = -1)
@@ -119,7 +138,6 @@ def copy_file(origin_file_path,destination_file_path):
     print(f'Error : {e}')
   except:
     print(f'Error: Not able to copy from {origin_file_path} to {destination_file_path}')
-
 
 
 

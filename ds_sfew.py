@@ -7,7 +7,9 @@ import torchvision.transforms as transforms # transformation with respect to mea
 from torchvision.datasets import ImageFolder # for datasets (reference: Sai's usage)
 from torch.utils.data import Dataset
 import torch
-from utils import copy_file,extract_zip_files
+from utils import copy_file,extract_zip_files,unnormalize
+from PIL import Image
+from torchvision.transforms import ToPILImage
 
 # class OneHotSFEWDataset(Dataset):
 #     def __init__(self, root, transform = None) -> None:
@@ -36,8 +38,13 @@ from utils import copy_file,extract_zip_files
 class OneHotSFEWDataset(Dataset):
     def __init__(self, root, transform = None) -> None:
         super().__init__()
+        dataconfig = DataConfig()
         self.image_folder = ImageFolder(root, transform)
         self.class_labels = self.image_folder.classes
+        self.transform = transform
+        self.to_pil = ToPILImage()
+        self.mean_ds = dataconfig.SFEW_mean_ds
+        self.std_dev_ds = dataconfig.SFEW_std_dev_ds
         # self.one_hot_labels = self.get_one_hot_labels()
     
     def __len__(self):
@@ -49,6 +56,13 @@ class OneHotSFEWDataset(Dataset):
         one_hot_label[label]=1
 
         # one_hot_label = self.one_hot_labels[idx]
+
+        if self.transform:
+            image = unnormalize(image,
+                                mean=self.mean_ds, 
+                                std=self.std_dev_ds)
+            image = self.to_pil(image)
+            image = self.transform(image)
 
         image_name = self.image_folder.imgs[idx][0]
         return image, one_hot_label, image_name
@@ -78,7 +92,7 @@ class DatasetSFEW():
 
         
 
-        print(f'self.BASE_PATH -{self.BASE_PATH },\n self.EXTRACT_DIR-{self.EXTRACT_PATH},\n self.ZIP_FILE_PATH - {self.ZIP_FILE_PATH} ')
+        print(f' self.BASE_PATH -{self.BASE_PATH }, \n self.EXTRACT_DIR-{self.EXTRACT_PATH},\n self.ZIP_FILE_PATH - {self.ZIP_FILE_PATH} ')
         
         # 2. Extract data
         self.extract_dataset()
@@ -148,6 +162,7 @@ class DatasetSFEW():
             # imagenet data values as default
             mean_ds = [0.485, 0.456, 0.406] 
             std_dev_ds = [0.229, 0.224, 0.225]
+    
 
         # Train Phase transformations
         #TODO: Use albumentations in later versions, first iteration does not include any transformations
@@ -158,6 +173,7 @@ class DatasetSFEW():
                                        ])
 
         # Val Phase transformations
+        print(f'----------mean_ds = {mean_ds}, std_dev_ds = {std_dev_ds}----------')
         sfew_val_transforms = transforms.Compose([transforms.Resize((224, 224)),
                                             transforms.ToTensor(),
                                             transforms.Normalize(mean_ds, std_dev_ds)
@@ -167,6 +183,12 @@ class DatasetSFEW():
         
         sfew_val_ds = OneHotSFEWDataset(root=self.dict_dataset['VAL_DIR'],
                                    transform=sfew_val_transforms)
+        
+        # sfew_train_ds = OneHotSFEWDataset(root=self.dict_dataset['TRAIN_DIR'],
+        #                             transform=None)
+        
+        # sfew_val_ds = OneHotSFEWDataset(root=self.dict_dataset['VAL_DIR'],
+        #                            transform=None)
         
         # sfew_train_ds = ImageFolder(root=self.dict_dataset['TRAIN_DIR'],
         #                             transform=sfew_train_transforms)
@@ -179,9 +201,10 @@ class DatasetSFEW():
     def get_dataset(self, mean_ds = None, std_dev_ds=None):
         if self.train_ds is None and self.val_ds is None:
             if self.mean_ds is None and self.std_dev_ds is None:
-               return self.create_dataset(mean_ds=mean_ds,std_dev_ds=std_dev_ds)
+               return self.create_dataset(mean_ds=self.mean_ds,std_dev_ds=self.std_dev_ds)
             else:
-                return self.create_dataset(mean_ds=self.mean_ds,std_dev_ds=self.std_dev_ds)
+                return self.create_dataset(mean_ds=mean_ds,std_dev_ds=std_dev_ds)
+
 
         return self.train_ds, self.val_ds
 
@@ -190,6 +213,10 @@ class DatasetSFEW():
             self.BATCH_SIZE = BATCH_SIZE
         
         dataloader_args = dict(shuffle=True, batch_size=self.BATCH_SIZE, num_workers=4, pin_memory=True) if self.cuda else dict(shuffle=True, batch_size=self.BATCH_SIZE)
+
+        if self.train_ds is None or self.val_ds is None:
+            # self.train_ds, self.val_ds = self.get_dataset(mean_ds=self.mean_ds,std_dev_ds=self.std_dev_ds)
+            self.train_ds, self.val_ds = self.create_dataset()
 
         # train dataloader
         sfew_train_loader = DataLoader(self.train_ds, **dataloader_args)
