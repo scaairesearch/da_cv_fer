@@ -57,7 +57,7 @@ def train_model(model,device, data_loader, optimizer, epoch,
         processed += len(images)
         curr_lr = optimizer.param_groups[0]['lr']
 
-        pbar.set_description(desc= f'Loss={class_loss.item()} Accuracy={100*correct/processed:0.2f}% Epoch Avg loss={epoch_loss/processed:0.8f} LR={curr_lr:0.6f}')
+        pbar.set_description(desc= f'Loss={class_loss.item()} Accuracy={correct}/{processed}({100*correct/processed:0.2f}%) Epoch Avg loss={epoch_loss/processed:0.8f} LR={curr_lr:0.6f}')
 
     return float("{:.8f}".format(epoch_loss/processed)),  curr_lr
 
