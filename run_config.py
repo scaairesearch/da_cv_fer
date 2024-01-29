@@ -24,7 +24,7 @@ class RunConfig:
         self.criterion_domain = nn.BCEWithLogitsLoss() # we can also use nn.CrossEntropyLoss() - we are not doing log_softmax or softmax
 
         self.lr_patience = 3
-        self.early_stop_patience = 5
+        self.early_stop_patience = 10
         self.EWC_LAMBDA = 0.4
         
 
