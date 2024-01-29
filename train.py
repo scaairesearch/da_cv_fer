@@ -36,6 +36,7 @@ def train_model(model,device, data_loader, optimizer, epoch,
 
     processed = 0 # to understand accuracy, used in denominator
     epoch_loss = 0.0
+    correct = 0
 
     for batch_idx, batch in enumerate(pbar):
         images, labels = batch[0].to(device), batch[1].to(device) # batch of images and labels
