@@ -12,6 +12,17 @@ def weights_init(m):
       nn.init.xavier_normal_(m.weight) # Linear layers are added on
       nn.init.zeros_(m.bias)
 
+
+def get_correct_predictions(prediction, labels):
+    """
+    Function to return total number of correct predictions
+    :param prediction: Model predictions on a given sample of data
+    :param labels: Correct labels of a given sample of data
+    :return: Number of correct predictions
+    """
+    return prediction.argmax(dim=1).eq(labels.argmax(dim=1)).sum().item()
+
+
 #@title Typical Training Function with Learning rate
 
 def train_model(model,device, data_loader, optimizer, epoch,
@@ -35,6 +46,8 @@ def train_model(model,device, data_loader, optimizer, epoch,
 
         class_loss = class_loss_function(class_output,labels) # Calculate Loss
         epoch_loss += class_loss.item()
+        # Sum up batch correct predictions
+        correct += get_correct_predictions(class_output, labels)
 
         class_loss.backward() #backpropogation, creating gradients
 
@@ -43,18 +56,11 @@ def train_model(model,device, data_loader, optimizer, epoch,
         processed += len(images)
         curr_lr = optimizer.param_groups[0]['lr']
 
-        pbar.set_description(desc= f'Loss={class_loss.item()} Batch_id={batch_idx+1} Epoch Average loss={epoch_loss/processed:0.8f} LR={curr_lr:0.6f}')
+        pbar.set_description(desc= f'Loss={class_loss.item()} Accuracy={100*correct/processed:0.2f} Epoch Avg loss={epoch_loss/processed:0.8f} LR={curr_lr:0.6f}')
 
     return float("{:.8f}".format(epoch_loss/processed)),  curr_lr
 
-def get_correct_predictions(prediction, labels):
-    """
-    Function to return total number of correct predictions
-    :param prediction: Model predictions on a given sample of data
-    :param labels: Correct labels of a given sample of data
-    :return: Number of correct predictions
-    """
-    return prediction.argmax(dim=1).eq(labels.argmax(dim=1)).sum().item()
+
 
 
 #@title Typical Test Function
