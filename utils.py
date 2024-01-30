@@ -54,7 +54,7 @@ def show_batch(dataset_loader,label_names,num_images=5):
   for i in range(num_images):
 
     ax = plt.subplot(int(num_images//5)+1, 5, i + 1)
-    print("image tensor: \n",images[i])
+    # print("image tensor: \n",images[i])
     # images[i] = images[i] / 2 + 0.5 # unnormalize, though not the best way
     images[i] = unnormalize(images[i]) # created new function
     ax.imshow(images[i].permute(1, 2, 0))

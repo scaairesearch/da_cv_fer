@@ -29,6 +29,7 @@ class DataConfig:
             self.SFEW_BATCH_SIZE = 16
         else:
             self.SFEW_BATCH_SIZE = 4
+        self.SFEW_TRANSFORMS = None #'A' # None or 'A'
         
 
         self.EXPW_LINK = "https://www.kaggle.com/datasets/mohammedaaltaha/expwds"

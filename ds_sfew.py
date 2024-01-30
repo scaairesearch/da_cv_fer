@@ -10,6 +10,12 @@ import torch
 from utils import copy_file,extract_zip_files,unnormalize
 from PIL import Image
 from torchvision.transforms import ToPILImage
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+from torchvision.transforms import v2
+
+import numpy as np
+
 
 # class OneHotSFEWDataset(Dataset):
 #     def __init__(self, root, transform = None) -> None:
@@ -39,12 +45,13 @@ class OneHotSFEWDataset(Dataset):
     def __init__(self, root, transform = None) -> None:
         super().__init__()
         dataconfig = DataConfig()
-        self.image_folder = ImageFolder(root, transform)
-        self.class_labels = self.image_folder.classes
         self.transform = transform
+        self.image_folder = ImageFolder(root, self.transform)
+        self.class_labels = self.image_folder.classes
         self.to_pil = ToPILImage()
         self.mean_ds = dataconfig.SFEW_mean_ds
         self.std_dev_ds = dataconfig.SFEW_std_dev_ds
+        self.tranforms_type = dataconfig.SFEW_TRANSFORMS
         # self.one_hot_labels = self.get_one_hot_labels()
     
     def __len__(self):
@@ -55,14 +62,30 @@ class OneHotSFEWDataset(Dataset):
         one_hot_label = torch.zeros(len(self.class_labels))
         one_hot_label[label]=1
 
+        # print("image before .....\n", image)
+
         # one_hot_label = self.one_hot_labels[idx]
 
         if self.transform:
-            image = unnormalize(image,
-                                mean=self.mean_ds, 
-                                std=self.std_dev_ds)
-            image = self.to_pil(image)
-            image = self.transform(image)
+            if self.tranforms_type == 'A': # using albumentations
+                # image = lambda x : self.transform(image=x)["image"]
+                print("0...")
+                image_np = image.numpy()#np.array(image) # image # np.array(image)
+                print("1...")
+                augmented = self.transform(image=image_np)
+                print("2...")
+                image = augmented['image']
+                print("3...")
+                # image_pil = Image.fromarray(image_transformed) # Convert NumPy array back to PIL image
+                # print("4...")
+                # image = ToTensorV2()(image_pil) # Convert PIL image to PyTorch tensor
+
+            else:
+                image = unnormalize(image,
+                                    mean=self.mean_ds, 
+                                    std=self.std_dev_ds) # image is already normalized
+                image = self.to_pil(image) # converting into PIL object
+                image = self.transform(image) # applying transform on PIL object
 
         image_name = self.image_folder.imgs[idx][0]
         return image, one_hot_label, image_name
@@ -90,7 +113,7 @@ class DatasetSFEW():
                              'TEST_DIR' : Path(self.EXTRACT_PATH,'Test'),
                              'VAL_DIR' : Path(self.EXTRACT_PATH,'Val')}
 
-        
+        self.tranforms_type = dataconfig.SFEW_TRANSFORMS
 
         print(f' self.BASE_PATH -{self.BASE_PATH }, \n self.EXTRACT_DIR-{self.EXTRACT_PATH},\n self.ZIP_FILE_PATH - {self.ZIP_FILE_PATH} ')
         
@@ -166,18 +189,48 @@ class DatasetSFEW():
 
         # Train Phase transformations
         #TODO: Use albumentations in later versions, first iteration does not include any transformations
-        sfew_train_transforms = transforms.Compose([
-                                       transforms.Resize((224, 224)),
-                                       transforms.ToTensor(),
-                                       transforms.Normalize(mean_ds, std_dev_ds)
-                                       ])
+        print(f'----------mean_ds = {mean_ds}, std_dev_ds = {std_dev_ds}----------')
+        if self.tranforms_type == 'A': # Albumentations based
+            sfew_train_transforms = A.Compose([
+                A.Resize(224,224),# Resize the image to a specific size while maintaining the aspect ratio
+                A.HorizontalFlip(p=0.5),# Apply horizontal flip with a probability of 50%
+                A.Rotate(limit =7, p=0.5), # Apply a random rotation between +/- 7 degrees with 50% probability
+                # A.GaussNoise( p=0.2), # Apply noise
+                # A.RandomBrightnessContrast(p=0.5),# Random brigtness and Contrast
+                A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
+                ToTensorV2() # Convert the image to a PyTorch tensor       
+            ])
+        else:
+            sfew_train_transforms = transforms.Compose([
+                                        # transforms.CenterCrop(size = (224,224)),
+                                        transforms.Resize((224, 224)),
+                                        transforms.RandomApply([transforms.RandomHorizontalFlip(p=0.5)]),  # Horizontal flip with 50% probability
+                                        transforms.RandomApply([transforms.RandomRotation(degrees=(-10, 10))], p=0.5),  # Random rotation with 50% probability
+                                        transforms.RandomApply([transforms.Grayscale(num_output_channels = 3)], p=0.3) , # gray scale
+                                        transforms.RandomApply([v2.ColorJitter(brightness=.5, hue=.3)], p=0.3) , # color jitter
+                                        transforms.RandomApply([v2.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.))], p=0.3) , # gaussian blur
+                                        transforms.RandomApply([v2.RandomAdjustSharpness(sharpness_factor=2)], p=0.3) , # sharpness
+                                        transforms.RandomApply([v2.RandomAutocontrast()], p=0.3) , # autocontrast
+                                        transforms.RandomApply([v2.RandomEqualize()], p=0.3) , # autocontrast
+                                        transforms.ToTensor(),
+                                        transforms.Normalize(mean_ds, std_dev_ds)
+                                        ])
 
         # Val Phase transformations
-        print(f'----------mean_ds = {mean_ds}, std_dev_ds = {std_dev_ds}----------')
-        sfew_val_transforms = transforms.Compose([transforms.Resize((224, 224)),
-                                            transforms.ToTensor(),
-                                            transforms.Normalize(mean_ds, std_dev_ds)
-                                            ])
+        if self.tranforms_type == 'A': # Albumentations based
+            sfew_val_transforms=A.Compose([
+                A.Resize(224,224),# Resize the image to a specific size while maintaining the aspect ratio
+                A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
+                ToTensorV2() # Convert the image to a PyTorch tensor
+            ])
+        else:
+            sfew_val_transforms = transforms.Compose([
+                # transforms.CenterCrop(size = (224,224)),
+                transforms.Resize((224, 224)),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize(mean_ds, std_dev_ds)
+                                                ])
+        
         sfew_train_ds = OneHotSFEWDataset(root=self.dict_dataset['TRAIN_DIR'],
                                     transform=sfew_train_transforms)
         
