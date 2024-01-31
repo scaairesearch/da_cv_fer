@@ -1,9 +1,14 @@
 import torch.nn as nn
 import torch
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet18, resnet50, vgg16_bn, ResNet50_Weights, ResNet18_Weights,VGG16_BN_Weights
 from torch.autograd import Function
 import torch.nn.functional as F
 
+# dict_pretrained_models = {
+#     'resnet18': resnet18(pretrained=True,progress=True),
+#     'resnet50': resnet50(weights = ResNet50_Weights.DEFAULT),
+#     'vgg16': vgg16_bn(pretrained=True,progress=True)
+#     }
 
 class GradientReversalFn(Function):
     @staticmethod
@@ -19,14 +24,27 @@ class GradientReversalFn(Function):
         return output, None
 
 class DANN(nn.Module):
-    def __init__(self, num_classes, dropout = 0.1) -> None:
+    def __init__(self, num_classes, backbone = 'resnet50', dropout = 0.1) -> None:
         super().__init__()
 
         # resnet50_base_pretrained = resnet50(weights = ResNet50_Weights.DEFAULT)
         # self.feature_extrator = nn.Sequential(*list(resnet50_base_pretrained.children())[:-2])
         #---------------------Feature Extractor Network------------------------#
-        self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
-
+        
+        if backbone == 'resnet18':
+            self.feature_extractor = resnet18(weights=ResNet18_Weights.DEFAULT)
+        elif backbone =='vgg16':
+            self.feature_extractor = vgg16_bn(weights=VGG16_BN_Weights.DEFAULT)
+        else:
+            self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
+        
+        print(f'feature extractor backbone created using {backbone} model')
+        
+        # try:
+        #     self.feature_extractor = dict_pretrained_models[backbone]
+        # except:
+        #     print(f'using default pretrained, problem loading {backbone}')
+        #     self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
 
         #---------------------Class Classifier Network------------------------#
         self.class_classifier = nn.Sequential(nn.ReLU(),
@@ -72,7 +90,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if use_cuda else "cpu")
     print(device)
 
-    model = DANN(num_classes=7).to(device)
+    model = DANN(num_classes=7,backbone='vgg16').to(device)
     print(model)
     summary(model, input_size=(3,224,224))
 
