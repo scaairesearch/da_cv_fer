@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 import shutil
 from torchvision.transforms import Normalize
+import matplotlib.pyplot as plt # for visualizing images
 
 
 def unnormalize(image_tensor, mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]):
@@ -139,7 +140,28 @@ def copy_file(origin_file_path,destination_file_path):
   except:
     print(f'Error: Not able to copy from {origin_file_path} to {destination_file_path}')
 
+def plot_loss_curves(dict_losses, mode = "train_losses", label ='Non DANN ' + 'SFEW' ):
+    fig=plt.figure(figsize=(10,20))
+    fig.add_subplot(5, 1, 2)
+    # for embedding in dict_emb_file.keys():
+    list1_to_plot= dict_losses[mode]
+    plt.plot(range(1,len(list1_to_plot)+1),list1_to_plot, label = label)
+    plt.xlabel('number of epochs', fontsize=10)
+    plt.ylabel(str(mode), fontsize=10)
+    plt.legend(loc = 'upper right')
+    plt.title(" "+mode)
+    plt.show()
 
+def early_stopping_difference(list_loss: list, patience = 5, difference = 0.0003):
+  if len(list_loss) > patience:
+    reverse_list_loss = list_loss[::-1]
+    reverse_list_loss = reverse_list_loss[0:patience+1]
+    for index in range(0,len(reverse_list_loss)-1):
+      if abs(reverse_list_loss[index] - reverse_list_loss[index+1]) > difference:
+        return False
+    return True
+  else:
+    return False
 
 if __name__ == '__main__':
   print(torch.tensor([1.,0]*10).view(-1,2))
