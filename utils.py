@@ -42,7 +42,7 @@ def unnormalize(image_tensor, mean = [0.485, 0.456, 0.406], std = [0.229, 0.224,
 #       plt.title(label_names[targets[i]])
 #     plt.axis("off")
 
-def show_batch(dataset_loader,label_names,num_images=5):
+def show_batch(dataset_loader,label_names,num_images=5,normalized=True):
   '''
   shows a batch of images (default = 5)
   '''
@@ -57,7 +57,8 @@ def show_batch(dataset_loader,label_names,num_images=5):
     ax = plt.subplot(int(num_images//5)+1, 5, i + 1)
     # print("image tensor: \n",images[i])
     # images[i] = images[i] / 2 + 0.5 # unnormalize, though not the best way
-    images[i] = unnormalize(images[i]) # created new function
+    if normalized:
+      images[i] = unnormalize(images[i]) # created new function
     ax.imshow(images[i].permute(1, 2, 0))
     if is_one_hot:
       label_index = torch.argmax(targets[i], dim = -1)
