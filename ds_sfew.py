@@ -201,19 +201,21 @@ class DatasetSFEW():
                 ToTensorV2() # Convert the image to a PyTorch tensor       
             ])
         else:
+
             sfew_train_transforms = transforms.Compose([
                                         # transforms.CenterCrop(size = (224,224)),
                                         transforms.Resize((224, 224)),
                                         transforms.RandomApply([transforms.RandomHorizontalFlip(p=0.5)]),  # Horizontal flip with 50% probability
-                                        transforms.RandomApply([transforms.RandomRotation(degrees=(-10, 10))], p=0.5),  # Random rotation with 50% probability
-                                        transforms.RandomApply([transforms.Grayscale(num_output_channels = 3)], p=0.3) , # gray scale
-                                        transforms.RandomApply([v2.ColorJitter(brightness=.5, hue=.3)], p=0.3) , # color jitter
-                                        transforms.RandomApply([v2.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.))], p=0.3) , # gaussian blur
-                                        transforms.RandomApply([v2.RandomAdjustSharpness(sharpness_factor=2)], p=0.3) , # sharpness
-                                        transforms.RandomApply([v2.RandomAutocontrast()], p=0.3) , # autocontrast
-                                        transforms.RandomApply([v2.RandomEqualize()], p=0.3) , # autocontrast
+                                        transforms.RandomApply([transforms.RandomRotation(degrees=(-15, 15))], p=0.5),  # Random rotation with 50% probability
+                                        transforms.RandomApply([transforms.Grayscale(num_output_channels = 3)], p=0.1) , # gray scale
+                                        transforms.RandomApply([v2.ColorJitter(brightness=.5, hue=.3)], p=0.1) , # color jitter
+                                        transforms.RandomApply([v2.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.))], p=0.1) , # gaussian blur
+                                        transforms.RandomApply([v2.RandomAdjustSharpness(sharpness_factor=2)], p=0.1) , # sharpness
+                                        transforms.RandomApply([v2.RandomAutocontrast()], p=0.1) , # autocontrast
+                                        transforms.RandomApply([v2.RandomEqualize()], p=0.1) , # autocontrast
                                         transforms.ToTensor(),
                                         transforms.Normalize(mean_ds, std_dev_ds)
+                                   
                                         ])
 
         # Val Phase transformations
