@@ -26,7 +26,7 @@ class DataConfig:
         self.SFEW_mean_ds = [0.2197, 0.1858, 0.1569]
         self.SFEW_std_dev_ds = [0.1810, 0.1635, 0.1511]
         if self.IN_COLAB:
-            self.SFEW_BATCH_SIZE = 16
+            self.SFEW_BATCH_SIZE = 64
         else:
             self.SFEW_BATCH_SIZE = 4
         self.SFEW_TRANSFORMS = None #'A' # None or 'A'
@@ -50,7 +50,7 @@ class DataConfig:
         self.EXPW_mean_ds = [0.3917, 0.3120, 0.2759]
         self.EXPW_std_dev_ds = [0.2205, 0.2134, 0.2277]
         if self.IN_COLAB:
-            self.EXPW_BATCH_SIZE = 16
+            self.EXPW_BATCH_SIZE = 64
         else:
             self.EXPW_BATCH_SIZE = 4
 
