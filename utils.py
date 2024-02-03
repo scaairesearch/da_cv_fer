@@ -164,6 +164,38 @@ def early_stopping_difference(list_loss: list, patience = 5, difference = 0.0003
   else:
     return False
 
+def create_directory(directory_path):
+  ''' Creates directory if not present'''
+  try:
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+        print(f"Directory created: {directory_path}")
+    return True
+  except OSError as e:
+    print(f"Error: {e}")
+    return False
+  
+def is_directory_empty(directory_path):
+  ''' Check if there are no files /dir underneath a directory'''
+  try:
+      # List all files and directories in the given path
+      contents = os.listdir(directory_path)
+
+      # Filter out only files (not directories)
+      # files = [item for item in contents if os.path.isfile(os.path.join(directory_path, item))]
+      items = [item for item in contents]
+
+      # Check if there are no files
+      return len(items) == 0
+  
+  except OSError as e:
+      print(f"Error: {e}")
+      return True  # Treat errors as an empty directory
+
+
+
+   
+
 if __name__ == '__main__':
   print(torch.tensor([1.,0]*10).view(-1,2))
   label_matrix = torch.eye(7)
