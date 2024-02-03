@@ -25,9 +25,10 @@ class OneHotSFEWCROPDataset(Dataset):
         super().__init__()
 
         self.crop_at_runtime = crop_at_runtime 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         if self.crop_at_runtime:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.mtcnn = MTCNN(image_size=224).to(device=device)
+            self.mtcnn = MTCNN(image_size=224).to(device=self.device)
         
 
         dataconfig = DataConfig()
@@ -61,7 +62,7 @@ class OneHotSFEWCROPDataset(Dataset):
             # image_pil.show()
 
             # Get cropped and prewhitened image tensor
-            img_cropped = self.mtcnn(image_pil)
+            img_cropped = self.mtcnn(image_pil).to(device=self.device)
 
             if img_cropped is None: # case where face is not detected
                 if self.transform:
@@ -145,9 +146,9 @@ class DatasetSFEWCROP():
     def __init__(self,crop_at_runtime=False) -> None:
         # 1. Download data
         self.crop_at_runtime = crop_at_runtime
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if not self.crop_at_runtime:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.mtcnn = MTCNN(image_size=224).to(device=device)
+            self.mtcnn = MTCNN(image_size=224).to(device=self.device)
 
         dataconfig = DataConfig()
         self.BASE_PATH = dataconfig.SFEW_BASE_PATH
@@ -275,7 +276,7 @@ class DatasetSFEWCROP():
                                 img_save_path = os.path.join(target_dir,
                                                             image_name)
                                 # print(f'{os.path.join(subdir, image_name)} || {image_name} || {img_save_path}')
-                                img_cropped = self.mtcnn(img, save_path = img_save_path)
+                                img_cropped = self.mtcnn(img, save_path = img_save_path).to(device=self.device)
                         
                             print(f'{len(image_file_names)} cropped images created in {os.path.basename(subdir)}')
 
