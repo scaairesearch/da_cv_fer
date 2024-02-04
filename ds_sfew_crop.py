@@ -28,7 +28,7 @@ class OneHotSFEWCROPDataset(Dataset):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if self.crop_at_runtime:
-            self.mtcnn = MTCNN(image_size=224).to(device=self.device)
+            self.mtcnn = MTCNN(image_size=224,device=self.device)#MTCNN(image_size=224).to(device=self.device)
         
 
         dataconfig = DataConfig()
@@ -150,6 +150,8 @@ class DatasetSFEWCROP():
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if not self.crop_at_runtime:
             self.mtcnn = MTCNN(image_size=224,device=self.device)#MTCNN(image_size=224).to(device='cpu') # offline changes are on CPU and not GPU
+            # self.mtcnn = MTCNN(image_size=224) # offline changes are on CPU and not GPU
+
 
         dataconfig = DataConfig()
         self.BASE_PATH = dataconfig.SFEW_BASE_PATH
