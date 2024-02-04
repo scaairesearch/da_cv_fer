@@ -29,6 +29,7 @@ class DatasetEXPWCROP(Dataset):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.crop_at_runtime:
             self.mtcnn = MTCNN(image_size=224, device= self.device)#MTCNN(image_size=224).to(device=self.device)
+            # self.mtcnn = MTCNN(image_size=224)
         else:
             # self.mtcnn = MTCNN(image_size=224, device= self.device)#MTCNN(image_size=224).to(device=self.device)#.to(device='cpu') # always wanted on CPU
             self.mtcnn = MTCNN(image_size=224).to(device='cpu') # always wanted on CPU
@@ -173,7 +174,7 @@ class DatasetEXPWCROP(Dataset):
 
         if self.crop_at_runtime:
             img = Image.open(Path(self.expw_image_path,img_name))
-            img_cropped = self.mtcnn(img).to(device=self.device)
+            img_cropped = self.mtcnn(img)#.to(device=self.device)
 
             if img_cropped is None:
                 if self.transform:
@@ -192,7 +193,7 @@ class DatasetEXPWCROP(Dataset):
                 img = Image.open(Path(self.crop_dir,img_name))
             except:
                 img = Image.open(Path(self.expw_image_path,img_name))
-                print(f'{img_name} : cropped image of not found, replacing with original image')
+                # print(f'{img_name} : cropped image of not found, replacing with original image')
 
             if self.transform:
                 img_cropped = self.transform(img)
