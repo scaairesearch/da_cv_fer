@@ -91,7 +91,16 @@ class DatasetEXPWCROP(Dataset):
         self.labels=list(labels_map.values())
         self.label_matrix = torch.eye(len(self.labels)) # one hot matrix
 
-        # 2. splitting into train and val - as per  the split
+        # 2. splitting into train and val - 
+        # partial dataset if 
+        EXPW_PARTIAL = float(dataconfig.EXPW_PARTIAL)
+
+        num_of_samples = int(len(image_label_dict)*EXPW_PARTIAL)
+
+        image_label_dict = dict(random.sample(image_label_dict.items(),num_of_samples))
+
+        #2b as per  the Train test Split
+
         total_im=len(image_label_dict)
         num_train=int(len(image_label_dict)*EXPW_TRAIN_TEST_SPLIT)
         num_val=total_im-num_train
@@ -147,6 +156,7 @@ class DatasetEXPWCROP(Dataset):
             
             if flag_create_crop_contents:
                 # populate the directories
+                print("\n WARNING: It may take a long  time to crop the images, please be patient\n ")
                 for image_label_tuple in self.list_img_label:
                     img_name = image_label_tuple[0]
                     img = Image.open(Path(self.expw_image_path,img_name)).convert("RGB")
@@ -154,7 +164,6 @@ class DatasetEXPWCROP(Dataset):
                     img_cropped = self.mtcnn(img,save_path = img_save_path)
                 
                     
-                
                 print(f'{len(os.listdir(self.crop_dir))} cropped images created in {os.path.basename(self.crop_dir)}')
 
     def __getitem__(self, idx):
