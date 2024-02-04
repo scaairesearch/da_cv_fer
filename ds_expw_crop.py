@@ -28,9 +28,9 @@ class DatasetEXPWCROP(Dataset):
         self.crop_at_runtime = crop_at_runtime
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.crop_at_runtime:
-            self.mtcnn = MTCNN(image_size=224).to(device='cpu')
+            self.mtcnn = MTCNN(image_size=224).to(device=self.device)
         else:
-            self.mtcnn = MTCNN(image_size=224)#.to(device='cpu') # always wanted on CPU
+            self.mtcnn = MTCNN(image_size=224).to(device=self.device)#.to(device='cpu') # always wanted on CPU
 
 
 
