@@ -63,7 +63,7 @@ class OneHotSFEWCROPDataset(Dataset):
             # image_pil.show()
 
             # Get cropped and prewhitened image tensor
-            img_cropped = self.mtcnn(image_pil).to(device=self.device)
+            img_cropped = self.mtcnn(image_pil,device=self.device)#.to(device=self.device)
 
             if img_cropped is None: # case where face is not detected
                 if self.transform:
@@ -147,9 +147,9 @@ class DatasetSFEWCROP():
     def __init__(self,crop_at_runtime=False) -> None:
         # 1. Download data
         self.crop_at_runtime = crop_at_runtime
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if not self.crop_at_runtime:
-            self.mtcnn = MTCNN(image_size=224).to(device='cpu') # offline changes are on CPU and not GPU
+            self.mtcnn = MTCNN(image_size=224,device=self.device)#MTCNN(image_size=224).to(device='cpu') # offline changes are on CPU and not GPU
 
         dataconfig = DataConfig()
         self.BASE_PATH = dataconfig.SFEW_BASE_PATH
