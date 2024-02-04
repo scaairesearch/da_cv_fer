@@ -33,7 +33,8 @@ class OneHotSFEWCROPDataset(Dataset):
 
         dataconfig = DataConfig()
         self.transform = transform
-        self.basic_transform = transforms.Compose([transforms.ToTensor()])
+        self.basic_transform = transforms.Compose([transforms.Resize((224, 224)),
+                                                   transforms.ToTensor()])
         self.image_folder = ImageFolder(root, transform=self.basic_transform)
         self.class_labels = self.image_folder.classes
         self.to_pil = ToPILImage()
@@ -276,7 +277,7 @@ class DatasetSFEWCROP():
                                 img_save_path = os.path.join(target_dir,
                                                             image_name)
                                 # print(f'{os.path.join(subdir, image_name)} || {image_name} || {img_save_path}')
-                                img_cropped = self.mtcnn(img, save_path = img_save_path)#.to(device=self.device)
+                                img_cropped = self.mtcnn(img, save_path = img_save_path) #.to(device=self.device)
                         
                             print(f'{len(image_file_names)} cropped images created in {os.path.basename(subdir)}')
 

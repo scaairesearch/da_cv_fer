@@ -8,6 +8,8 @@ from pathlib import Path
 import shutil
 from torchvision.transforms import Normalize
 import matplotlib.pyplot as plt # for visualizing images
+from torchvision import transforms
+
 
 
 def unnormalize(image_tensor, mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]):
@@ -119,6 +121,7 @@ def extract_zip_files_old(directory_path, extract_to):
         print(f"Error: {e}")
 
 def extract_zip_files(directory_path, extract_to):
+  ''' Extracts the zip files if not existing'''
   directory_path, extract_to = Path(directory_path), Path(extract_to) # converting from string to path
   if len(list(extract_to.glob("*"))) > 0: # checking if the zip files exists 
         non_zip_files = [file for file in Path.iterdir(directory_path) if not file.name.endswith(".zip")]
@@ -191,6 +194,13 @@ def is_directory_empty(directory_path):
   except OSError as e:
       print(f"Error: {e}")
       return True  # Treat errors as an empty directory
+  
+def save_image(image_data, save_path):
+    '''Saves image on CPU'''
+    # Convert PyTorch tensor to PIL Image if needed
+    image_data_pil = transforms.ToPILImage()(image_data.cpu())
+    # Save the PIL Image to the specified path
+    image_data_pil.save(save_path)
 
 
 

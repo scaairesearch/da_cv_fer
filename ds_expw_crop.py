@@ -10,19 +10,31 @@ import torchvision.transforms as transforms # transformation with respect to mea
 import torch
 import shutil # for copying files
 import os
-from utils import extract_zip_files
+from utils import *
 
 from facenet_pytorch import MTCNN
 
-
-
 class DatasetEXPWCROP(Dataset):
-    def __init__(self, train = True, transform=None) -> None:
-        
-        self.mtcnn = MTCNN (image_size=224)
-        self.basic_transform = transforms.Compose([transforms.ToTensor()])
+    def __init__(self, 
+                 train = True, 
+                 transform=None,
+                 crop_at_runtime=False):
+            
+        self.basic_transform = transforms.Compose([transforms.Resize((224, 224)),
+                                                   transforms.ToTensor()])
+
         self.Train = train
         self.transform = transform
+        self.crop_at_runtime = crop_at_runtime
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.crop_at_runtime:
+            self.mtcnn = MTCNN(image_size=224).to(device='cpu')
+        else:
+            self.mtcnn = MTCNN(image_size=224)#.to(device='cpu') # always wanted on CPU
+
+
+
+
 
         dataconfig = DataConfig()
 
@@ -30,14 +42,16 @@ class DatasetEXPWCROP(Dataset):
         expw_link = dataconfig.EXPW_LINK
         expw_data_dir = Path(dataconfig.EXPW_BASE_PATH)
         expw_extract_dir = Path(dataconfig.EXPW_EXTRACT_PATH)
+        self.crop_dir = Path(dataconfig.EXPW_CROP_PATH)
 
 
-        if not expw_extract_dir.exists():
-            # Create the directory
-            expw_extract_dir.mkdir(parents=True, exist_ok=True)
-            print(f'Directory {expw_extract_dir} created successfully.')
-        else:
-            print(f'Directory {expw_extract_dir} already exists.')
+
+        # if not expw_extract_dir.exists():
+        #     # Create the directory
+        #     expw_extract_dir.mkdir(parents=True, exist_ok=True)
+        #     print(f'Directory {expw_extract_dir} created successfully.')
+        # else:
+        #     print(f'Directory {expw_extract_dir} already exists.')
 
         # if len(list(expw_extract_dir.glob("*"))) == 0: # checking if the zip files exists
         #     od.download(dataset_id_or_url=expw_link, data_dir=str(expw_data_dir), force=True)
@@ -52,7 +66,7 @@ class DatasetEXPWCROP(Dataset):
         expw_label_dir = dataconfig.EXPW_LABEL_PATH
         expw_label_file = dataconfig.EXPW_LABEL_FILE_PATH
         self.expw_image_path = dataconfig.EXPW_DATA_PATH
-
+        EXPW_TRAIN_TEST_SPLIT = float(dataconfig.EXPW_TRAIN_TEST_SPLIT)
 
         file = open(str(expw_label_file),"r")
         data = file.readlines()
@@ -77,9 +91,9 @@ class DatasetEXPWCROP(Dataset):
         self.labels=list(labels_map.values())
         self.label_matrix = torch.eye(len(self.labels)) # one hot matrix
 
-        # 2. splitting into train and val - 80/20
+        # 2. splitting into train and val - as per  the split
         total_im=len(image_label_dict)
-        num_train=int(len(image_label_dict)*0.8)
+        num_train=int(len(image_label_dict)*EXPW_TRAIN_TEST_SPLIT)
         num_val=total_im-num_train
 
         full_list_dict = list(image_label_dict.items())
@@ -87,48 +101,104 @@ class DatasetEXPWCROP(Dataset):
 
         # print(full_list_dict[:30])
 
-
-
-
         # self.train_list_dict = full_list_dict[:num_train]
         # self.val_list_dict = full_list_dict[num_train:num_train+num_val]
 
         if self.Train:
             self.list_img_label = full_list_dict[:num_train]
         else:
-            self.list_img_label = full_list_dict[num_train:num_train+num_val]
+            self.list_img_label = full_list_dict[num_train:]
+
         
         #  # 3. Creating Dataset Object
         # self.mean_ds = dataconfig.EXPW_mean_ds
         # self.std_dev_ds = dataconfig.EXPW_mean_ds
         # self.train_ds, self.val_ds = None, None # initialization
         # self.train_ds, self.val_ds = self.get_dataset(self.mean_ds,self.std_dev_ds)
+        
+        ## CROPPING CONCEPTS
+        # ### CREATING TRAIN AND VAL folders
+        # self.dict_crop_dataset = {'CROP_TRAIN_DIR' : Path(expw_extract_dir,'Train_Crop'),
+        #                           'CROP_VAL_DIR': Path(expw_extract_dir,'Val_Crop')}
+                            # for dir_name, dir_path in self.dict_crop_dataset.items():
+        #     print(self.Train)
+        #     if str(self.Train).lower() in str(dir_name).lower():
+        #         crop_dir_name = dir_name
+        #         print( self.Train , crop_dir_name)
+            
+        if not self.crop_at_runtime:
+            # self.mtcnn = MTCNN(image_size=224)#.to(device='cpu') # always wanted on CPU
+            flag_create_crop_contents = False
+            if not os.path.exists(self.crop_dir):# check if the directories are already present under expw
+                create_directory(self.crop_dir) # creates if not there
+            if is_directory_empty(self.crop_dir): # check for contents inside them, if contents then exists else print that nothing in crop directory
+                print(f'**** {self.crop_dir} is empty***')
+                flag_create_crop_contents = True
 
+            
+            # for dir_name, dir_path in self.dict_crop_dataset.items():
+            #     if not os.path.exists(dir_path): # check if the directories are already present under sfew
+            #         create_directory(dir_path) # creates if not there
+            #         flag_create_crop_contents = True
+            #     else:
+            #         if is_directory_empty(dir_path): # check for contents inside them, if contents then exists else print that nothing in crop directory
+            #             print(f'**** {dir_name}/{dir_path} is empty***')
+            #             flag_create_crop_contents = True
+            
+            if flag_create_crop_contents:
+                # populate the directories
+                for image_label_tuple in self.list_img_label:
+                    img_name = image_label_tuple[0]
+                    img = Image.open(Path(self.expw_image_path,img_name)).convert("RGB")
+                    img_save_path = os.path.join(self.crop_dir,img_name)
+                    img_cropped = self.mtcnn(img,save_path = img_save_path)
+                
+                    
+                
+                print(f'{len(os.listdir(self.crop_dir))} cropped images created in {os.path.basename(self.crop_dir)}')
 
     def __getitem__(self, idx):
 
         # img_name = list(self.list_img_label.keys())[idx]
         img_name = self.list_img_label[idx][0]
-
-        # label = self.list_img_label[img_name]
         label = self.list_img_label[idx][1]
         label_onehot = self.label_matrix[int(label),:]
 
-        img = Image.open(Path(self.expw_image_path,img_name))
-        # Get cropped and prewhitened image tensor
-        img_cropped = self.mtcnn(img)
+        if self.crop_at_runtime:
+            img = Image.open(Path(self.expw_image_path,img_name))
+            img_cropped = self.mtcnn(img).to(device=self.device)
 
-        if img_cropped is None:
-            if self.transform:
-                image_transformed = self.transform(img) # original image
-            else:
-                image_transformed = self.basic_transform(img) # original image
+            if img_cropped is None:
+                if self.transform:
+                    image_transformed = self.transform(img) # original image
+                else:
+                    image_transformed = self.basic_transform(img) # original image
             
-            return image_transformed, label_onehot, img_name
+                return image_transformed, label_onehot, img_name
+            else:
+                # Rescale the tensor from the range [-1, 1] to [0, 1]
+                image_tensor_rescaled = (img_cropped + 1) / 2 
+                return image_tensor_rescaled, label_onehot, img_name 
+
         else:
-            # Rescale the tensor from the range [-1, 1] to [0, 1]
-            image_tensor_rescaled = (img_cropped + 1) / 2 
-            return image_tensor_rescaled, label_onehot, img_name       
+            try: # it may be possible that not all images are cropped
+                img = Image.open(Path(self.crop_dir,img_name))
+            except:
+                img = Image.open(Path(self.expw_image_path,img_name))
+                print(f'{img_name} : cropped image of not found, replacing with original image')
+
+            if self.transform:
+                img_cropped = self.transform(img)
+            else:
+                img_cropped = self.basic_transform(img)
+            # print(f'  pixel range value = {torch.max(img_cropped.view(-1))} | {torch.min(img_cropped.view(-1))}')
+
+            return img_cropped, label_onehot, img_name
+
+        # Get cropped and prewhitened image tensor
+        # img_cropped = self.mtcnn(img)
+
+              
 
         # if self.transform:
         #     img = self.transform(img)
@@ -141,9 +211,13 @@ class DatasetEXPWCROP(Dataset):
     
 
 class EXPWCROP():
-    def __init__(self,mean_ds = None, std_dev_ds=None, BATCH_SIZE = None):
+    def __init__(self,mean_ds = None, 
+                 std_dev_ds=None, 
+                 BATCH_SIZE = None,
+                 crop_at_runtime=False):
 
         self.dataconfig = DataConfig()
+        self.crop_at_runtime = crop_at_runtime
 
         # 1 download data
         self.origin_file_path = self.dataconfig.GDRIVE_EXPW_FILE_PATH
@@ -152,6 +226,7 @@ class EXPWCROP():
         self.base_path = self.dataconfig.EXPW_BASE_PATH
         self.data_path = self.dataconfig.EXPW_DATA_PATH
         self.label_path = self.dataconfig.EXPW_LABEL_PATH
+
         
         print(f'desitination file path = {self.destination_file_path}')
 
@@ -161,7 +236,7 @@ class EXPWCROP():
             else:
                 print(f'origin file path = {self.origin_file_path} does NOT exist')
     
-        # if the zip file is not there in destination, we have to download/copy it and laterunzip it
+        # if the zip file is not there in destination, we have to download/copy it and later unzip it
         if not os.path.exists(self.destination_file_path):
             # if extract path is not there, we need to create 
             if not self.extract_path.exists():
@@ -200,13 +275,8 @@ class EXPWCROP():
         # check if the file is already extracted, extracting it
         extract_zip_files(self.extract_path,self.extract_path)
         
-
-                
-            
         # check if the folders are already present
         
-
-
 
         if BATCH_SIZE is None:
             self.BATCH_SIZE = self.dataconfig.EXPW_BATCH_SIZE
@@ -227,6 +297,51 @@ class EXPWCROP():
         self.val_transforms = None
         self.train_loader, self.val_loader = None, None
 
+        # ## CROPPING CONCEPTS
+        # self.crop_at_runtime = crop_at_runtime
+        # ### CREATING TRAIN AND VAL folders
+        # if not self.crop_at_runtime:
+        #     self.dict_crop_dataset = {'CROP_TRAIN_DIR' : Path(self.extract_path,'Train_Crop'),
+        #                               'CROP_VAL_DIR': Path(self.extract_path,'Val_Crop')}
+        #     # self.mtcnn = MTCNN(image_size=224).to(device='cpu') # always wanted on CPU
+
+        #     flag_create_crop_contents = False
+        #     for dir_name, dir_path in self.dict_crop_dataset.items():
+        #         if not os.path.exists(dir_path): # check if the directories are already present under sfew
+        #             create_directory(dir_path) # creates if not there
+        #             flag_create_crop_contents = True
+
+        #         else:
+        #             if is_directory_empty(dir_path): # check for contents inside them, if contents then exists else print that nothing in crop directory
+        #                 print(f'**** {dir_name}/{dir_path} is empty***')
+        #                 flag_create_crop_contents = True
+            
+        #     if flag_create_crop_contents:
+        #         self.create_crop_contents()
+
+    # def create_crop_contents(self):
+    #     pass 
+        #1. split
+            
+        # list_subdir = [ os.path.join(dir_path,subdir) for subdir in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path,subdir))]
+        # # print(list_subdir)
+        # for subdir in list_subdir:
+        #     image_file_names = [f for f in os.listdir(subdir) if os.path.isfile(os.path.join(subdir, f))]
+        #     target_dir = os.path.join(self.dict_crop_dataset[crop_dir_name],
+        #                                         os.path.basename(subdir))
+        #     if os.path.exists(target_dir):
+        #         print(f'***No files cropped for { os.path.basename(subdir)}, it is assumed to have files already')
+        #     else:
+        #         for image_name in image_file_names:
+        #             img = Image.open(os.path.join(subdir, image_name)).convert("RGB")
+        #             img_save_path = os.path.join(target_dir,
+        #                                         image_name)
+        #             # print(f'{os.path.join(subdir, image_name)} || {image_name} || {img_save_path}')
+        #             img_cropped = self.mtcnn(img, save_path = img_save_path) #.to(device=self.device)
+            
+        #         print(f'{len(image_file_names)} cropped images created in {os.path.basename(subdir)}')
+
+
     
 
     def get_dataset(self):
@@ -235,17 +350,28 @@ class EXPWCROP():
         self.train_transforms = transforms.Compose([
                                         transforms.Resize((224, 224)),
                                         transforms.ToTensor(),
-                                        transforms.Normalize(self.mean_ds, self.std_dev_ds)
+                                        # transforms.Normalize(self.mean_ds, self.std_dev_ds)
                                         ])
 
         # Val Phase transformations
         self.val_transforms = transforms.Compose([transforms.Resize((224, 224)),
                                             transforms.ToTensor(),
-                                            transforms.Normalize(self.mean_ds, self.std_dev_ds)
+                                            # transforms.Normalize(self.mean_ds, self.std_dev_ds)
                                             ])
-    
-        self.train_ds = DatasetEXPWCROP(train= True, transform=self.train_transforms)
-        self.val_ds = DatasetEXPWCROP(train = False, transform=self.val_transforms)
+        if self.crop_at_runtime:
+            self.train_ds = DatasetEXPWCROP(train= True, 
+                                            transform=self.train_transforms,
+                                            crop_at_runtime = True)
+            self.val_ds = DatasetEXPWCROP(train = False, 
+                                          transform=self.val_transforms,
+                                          crop_at_runtime = True)
+        else:
+            self.train_ds = DatasetEXPWCROP(train= True, 
+                                            transform=self.train_transforms,
+                                            crop_at_runtime = False )
+            self.val_ds = DatasetEXPWCROP(train = False, 
+                                          transform=self.val_transforms,
+                                          crop_at_runtime = False)
 
         return self.train_ds,self.val_ds
 
@@ -282,13 +408,13 @@ def get_expw_dataloaders(BATCH_SIZE = None):
                                         #  transforms.RandomHorizontalFlip(),
                                         #  transforms.RandomRotation(5),
                                         transforms.ToTensor(),
-                                        transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
+                                        # transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
                                         ])
 
     # Val Phase transformations
     expw_val_transforms = transforms.Compose([transforms.Resize((224, 224)),
                                         transforms.ToTensor(),
-                                        transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
+                                        # transforms.Normalize(expw_mean_ds, expw_std_dev_ds)
                                         ])
     
     expw_train_ds = DatasetEXPWCROP(train= True, transform=expw_train_transforms)
@@ -387,10 +513,10 @@ if __name__ =='__main__':
     # %%
     import utils
     from ds_expw_crop import EXPWCROP
-    expw_object = EXPWCROP(BATCH_SIZE=6)
+    expw_object = EXPWCROP(BATCH_SIZE=6, crop_at_runtime=False)
     expw_train_ds,expw_val_ds = expw_object.get_dataset()
     expw_train_loader, expw_val_loader = expw_object.get_dataloader()
-    utils.show_batch(expw_train_loader,expw_train_ds.labels,6)
+    utils.show_batch(expw_train_loader,expw_train_ds.labels,6,normalized=False)
 
     images, labels,image_names = next(iter(expw_train_loader))
     print(images.shape, labels.shape, type(images), type(labels), type(image_names))

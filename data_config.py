@@ -26,7 +26,7 @@ class DataConfig:
         self.SFEW_mean_ds = [0.2197, 0.1858, 0.1569]
         self.SFEW_std_dev_ds = [0.1810, 0.1635, 0.1511]
         if self.IN_COLAB:
-            self.SFEW_BATCH_SIZE = 64
+            self.SFEW_BATCH_SIZE = 16
         else:
             self.SFEW_BATCH_SIZE = 4
         self.SFEW_TRANSFORMS = None #'A' # None or 'A'
@@ -46,11 +46,13 @@ class DataConfig:
         self.EXPW_DATA_PATH = Path(self.EXPW_EXTRACT_PATH,'origin')
         self.EXPW_LABEL_PATH = Path(self.EXPW_EXTRACT_PATH,'label')
         self.EXPW_LABEL_FILE_PATH = Path(self.EXPW_LABEL_PATH,'label.lst')
+        self.EXPW_CROP_PATH = Path(self.EXPW_EXTRACT_PATH,'cropped')
         #011960f626b19ef4ab6e3f9ffe8ba027
+        self.EXPW_TRAIN_TEST_SPLIT = 0.95
         self.EXPW_mean_ds = [0.3917, 0.3120, 0.2759]
         self.EXPW_std_dev_ds = [0.2205, 0.2134, 0.2277]
         if self.IN_COLAB:
-            self.EXPW_BATCH_SIZE = 64
+            self.EXPW_BATCH_SIZE = 16
         else:
             self.EXPW_BATCH_SIZE = 4
 
