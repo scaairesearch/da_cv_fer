@@ -23,40 +23,8 @@ class GradientReversalFn(Function):
 
         return output, None
 
-class SelfAttention(nn.Module):
-    def __init__(self, in_features):
-        super(SelfAttention, self).__init__()
-
-        # Linear layers for query, key, and value
-        self.query = nn.Linear(in_features, in_features)
-        self.key = nn.Linear(in_features, in_features)
-        self.value = nn.Linear(in_features, in_features)
-
-    def forward(self, x):
-        # Apply linear transformations to obtain query, key, and value
-        query = self.query(x)
-        key = self.key(x)
-        value = self.value(x)
-
-        # Compute attention scores
-        attention_scores = torch.matmul(query, key.transpose(-2, -1)) / torch.sqrt(torch.tensor(x.size(-1), dtype=torch.float32))
-
-        # Apply softmax to get attention weights
-        attention_weights = F.softmax(attention_scores, dim=-1)
-
-        # Compute the weighted sum using attention weights
-        attended_values = torch.matmul(attention_weights, value)
-
-        return attended_values
-
-
-
-
 class DANN(nn.Module):
-    def __init__(self, num_classes, 
-                 backbone = 'resnet50', 
-                 attention = False,
-                 dropout = 0.1) -> None:
+    def __init__(self, num_classes, backbone = 'resnet50', dropout = 0.1) -> None:
         super().__init__()
 
         # resnet50_base_pretrained = resnet50(weights = ResNet50_Weights.DEFAULT)
@@ -71,10 +39,6 @@ class DANN(nn.Module):
             self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
         
         print(f'feature extractor backbone created using {backbone} model')
-
-        self.attention = attention
-        if self.attention:
-            print(" Attention is being used for this model")
         
         # try:
         #     self.feature_extractor = dict_pretrained_models[backbone]
@@ -82,33 +46,16 @@ class DANN(nn.Module):
         #     print(f'using default pretrained, problem loading {backbone}')
         #     self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
 
-        #---------------------Class (Task) Classifier Network------------------------#
-        
-        class_classifier_layers = [nn.ReLU(),
-                                   nn.Dropout(p=dropout),
-                                   nn.Linear(1000,100),
-                                   nn.ReLU(),
-                                   nn.Dropout(p=dropout)]
-        if self.attention:
-            class_classifier_layers.append(SelfAttention(in_features=100))
-        
-        class_classifier_layers.extend([nn.ReLU(),
+        #---------------------Class Classifier Network------------------------#
+        self.class_classifier = nn.Sequential(nn.ReLU(),
                                         nn.Dropout(p=dropout),
-                                        nn.Linear(100,num_classes)])
-        
-        self.class_classifier = nn.Sequential(*class_classifier_layers)
-            
-        # self.class_classifier = nn.Sequential(nn.ReLU(),
-        #                                 nn.Dropout(p=dropout),
-        #                                 nn.Linear(1000,100),
-        #                                 # nn.BatchNorm1d(100), # added batch norm to improve accuracy
-        #                                 nn.ReLU(),
-        #                                 nn.Dropout(p=dropout),
-        #                                 nn.Linear(100,num_classes))
-        
-        
+                                        nn.Linear(1000,100),
+                                        # nn.BatchNorm1d(100), # added batch norm to improve accuracy
+                                        nn.ReLU(),
+                                        nn.Dropout(p=dropout),
+                                        nn.Linear(100,num_classes))
 
-        #---------------------Domain Classifier Network------------------------#
+        #---------------------Label Classifier Network------------------------#
         self.domain_classifier = nn.Sequential(nn.ReLU(),
                                         nn.Dropout(p=dropout),
                                         nn.Linear(1000,100),
@@ -132,6 +79,8 @@ class DANN(nn.Module):
         # return class_output, domain_output, features, F.log_softmax(domain_output,dim=-1), F.softmax(domain_output,dim=-1)
 
 
+
+
 if __name__ == '__main__':
     from torchsummary import summary  #for model summary and params
     from ds_sfew import DatasetSFEW
@@ -141,7 +90,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if use_cuda else "cpu")
     print(device)
 
-    model = DANN(num_classes=7,backbone='vgg16',attention=True).to(device)
+    model = DANN(num_classes=7,backbone='vgg16').to(device)
     print(model)
     summary(model, input_size=(3,224,224))
 
@@ -174,10 +123,3 @@ if __name__ == '__main__':
     # print("x_output_domains\n",x_domains)
     # print("log_softmax_domains\n", log_softmax_domains)
     # print("softmax_domains\n", softmax_domains)
-
-    # linear_output = torch.randn(1, 100)  # Assuming output from a linear layer with 100 units
-    # self_attention = SelfAttention(in_features=100)
-
-    # output = self_attention(linear_output)
-    # print(output.shape)
-
