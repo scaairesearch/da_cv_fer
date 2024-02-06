@@ -50,7 +50,7 @@ class DANN(nn.Module):
         self.class_classifier = nn.Sequential(nn.ReLU(),
                                         nn.Dropout(p=dropout),
                                         nn.Linear(1000,100),
-                                        # nn.BatchNorm1d(100), # added batch norm to improve accuracy
+                                        nn.BatchNorm1d(100), # added batch norm to improve accuracy
                                         nn.ReLU(),
                                         nn.Dropout(p=dropout),
                                         nn.Linear(100,num_classes))
@@ -59,7 +59,7 @@ class DANN(nn.Module):
         self.domain_classifier = nn.Sequential(nn.ReLU(),
                                         nn.Dropout(p=dropout),
                                         nn.Linear(1000,100),
-                                        # nn.BatchNorm1d(100), # added batch norm to improve accuracy
+                                        nn.BatchNorm1d(100), # added batch norm to improve accuracy
                                         nn.ReLU(),
                                         nn.Dropout(p=dropout),
                                         nn.Linear(100,2))
