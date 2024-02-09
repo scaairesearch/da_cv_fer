@@ -149,9 +149,9 @@ class DANNBespoke(nn.Module):
 
     def forward(self, input_data, alpha = 0.0):
         features = self.feature_extractor(input_data)
-        print("features.shape......", features.shape)
+        # print("features.shape......", features.shape)
         features = features.view(-1,features.size(1))
-        print("features.shape after view......", features.shape)
+        # print("features.shape after view......", features.shape)
 
         reverse_features = GradientReversalFn.apply(features,alpha)
 
