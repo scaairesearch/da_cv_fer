@@ -301,25 +301,34 @@ class DatasetSFEWCROP():
         if self.tranforms_type == 'A': # Albumentations based
             sfew_train_transforms = A.Compose([
                 A.Resize(224,224),# Resize the image to a specific size while maintaining the aspect ratio
-                A.HorizontalFlip(p=0.5),# Apply horizontal flip with a probability of 50%
-                A.Rotate(limit =7, p=0.5), # Apply a random rotation between +/- 7 degrees with 50% probability
+                A.HorizontalFlip(p=0.7),# Apply horizontal flip with a probability of 50%
+                A.Rotate(limit =15, p=0.7), # Apply a random rotation between +/- 7 degrees with 50% probability
                 # A.GaussNoise( p=0.2), # Apply noise
                 # A.RandomBrightnessContrast(p=0.5),# Random brigtness and Contrast
-                A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
-                ToTensorV2() # Convert the image to a PyTorch tensor       
+                # A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
+                ToTensorV2(p=1.0) # Convert the image to a PyTorch tensor       
             ])
         else:
             sfew_train_transforms = transforms.Compose([
                                         # transforms.CenterCrop(size = (224,224)),
                                         transforms.Resize((224, 224)),
-                                        transforms.RandomApply([transforms.RandomHorizontalFlip(p=0.8)]),  # Horizontal flip with 50% probability
-                                        transforms.RandomApply([transforms.RandomRotation(degrees=(-15, 15))], p=0.8),  # Random rotation with 50% probability
+                                        transforms.RandomApply([transforms.RandomResizedCrop(size=(224,224),scale=(0.8,1.0))],p=0.7),  
+                                        transforms.RandomApply([transforms.RandomHorizontalFlip(p=0.7)]),  # Horizontal flip with 70% probability
+                                        transforms.RandomApply([transforms.RandomRotation(degrees=(-15, 15),fill=(1,))], p=0.7),  # Random rotation with 70% probability
                                         transforms.RandomApply([transforms.Grayscale(num_output_channels = 3)], p=0.3) , # gray scale
                                         transforms.RandomApply([v2.ColorJitter(brightness=.5, hue=.3)], p=0.3) , # color jitter
                                         transforms.RandomApply([v2.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5.))], p=0.3) , # gaussian blur
                                         transforms.RandomApply([v2.RandomAdjustSharpness(sharpness_factor=2)], p=0.3) , # sharpness
                                         transforms.RandomApply([v2.RandomAutocontrast()], p=0.3) , # autocontrast
-                                        transforms.RandomApply([v2.RandomEqualize()], p=0.3) , # autocontrast
+                                        transforms.RandomApply([v2.RandomEqualize()], p=0.3) , # equalize
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(1,1,1)) , # cut out white
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(1,1,1)) , # cut out white
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(1,1,1)) , # cut out white
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(1,1,1)) , # cut out white
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
+                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
                                         transforms.ToTensor(),
                                         # transforms.Normalize(mean_ds, std_dev_ds)
                                         ])
@@ -328,7 +337,7 @@ class DatasetSFEWCROP():
         if self.tranforms_type == 'A': # Albumentations based
             sfew_val_transforms=A.Compose([
                 A.Resize(224,224),# Resize the image to a specific size while maintaining the aspect ratio
-                A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
+                # A.Normalize(mean=mean_ds, std=std_dev_ds),  # Normalize with calculated mean and std
                 ToTensorV2() # Convert the image to a PyTorch tensor
             ])
         else:
