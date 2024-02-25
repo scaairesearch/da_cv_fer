@@ -23,11 +23,11 @@ class RunConfig:
         self.criterion_class = nn.CrossEntropyLoss() # we are not doing log_softmax or softmax
         self.criterion_domain = nn.BCEWithLogitsLoss() # we can also use nn.CrossEntropyLoss() - we are not doing log_softmax or softmax
 
-        self.scheduler_patience = 3
-        self.scheduler_threshold = 0.001
+        self.scheduler_patience = 5 # 3
+        self.scheduler_threshold = 0.05 # 0.001
         self.scheduler_factor =0.2
 
-        self.early_stop_patience = 8
+        self.early_stop_patience = 10 # 8
         self.early_stop_difference = 0.001
         self.EWC_LAMBDA = 0.4
         
