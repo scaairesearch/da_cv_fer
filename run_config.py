@@ -28,7 +28,7 @@ class RunConfig:
         self.scheduler_factor =0.2
 
         self.early_stop_patience = 10 # 8
-        self.early_stop_difference = 0.001
+        self.early_stop_difference = 2 #0.001
         self.EWC_LAMBDA = 0.4
         
 
