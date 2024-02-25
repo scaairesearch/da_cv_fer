@@ -236,15 +236,77 @@ def cutout(mask_size, p, cutout_inside, mask_color=(0, 0, 0)):
 
     return _cutout
 
-   
+def get_misclassified_images_list(model, device, test_loader, num_image = 10):
+  '''
+  returns list of misclassified images, it does not display the images
+  '''
+  model.eval() # setting the model in evaluation mode
+  list_misclassified_images, labels_list,preds_list = [],[],[] # initialize
+  emotions = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+  with torch.no_grad():
+    for batch in test_loader:
+      images, labels,img_names = batch[0].to(device),batch[1].to(device),batch[2] #sending data to CPU or GPU as per device
+      outputs = model(images) # forward pass, result captured in outputs (plural as there are many images in a batch)
+      # the outputs are in batch size x one hot vector
+      preds = outputs[0].argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+      # print("preds: \t\t\t", [emotions[emotion] for emotion in preds.squeeze().tolist()])
+      # print("labels: \t\t", [emotions[emotion] for emotion in labels.argmax(dim=1).tolist()])
+      output_match_list = preds.eq(labels.argmax(dim=1).view_as(preds)).squeeze().tolist()
+      # print("output_match_list:\t", output_match_list)
+      # print("img_names: \t",[img_name.split('\\')[-1] for img_name in img_names])
+
+      labels_list = labels.squeeze().tolist()
+      preds_list = preds.squeeze().tolist()
+
+      for index, bool_value in enumerate(output_match_list):
+        if not bool_value: # looking for misclassified
+          if len(batch) == 3:
+            # print(f'{batch[2][index]}, GT:{batch[1][index]}, Pred:{preds[index]}')
+            list_misclassified_images.append((batch[0][index],batch[1][index],preds[index],batch[2][index]))
+          else:
+            list_misclassified_images.append((batch[0][index],batch[1][index],preds[index]))
+          if len(list_misclassified_images) == num_image: break
+      if len(list_misclassified_images) == num_image: break
+  return list_misclassified_images
+
+
+def plot_misclassified_images (list_misclassified_images,
+                               labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'] ):
+  '''
+  Plotting misclassified images function
+  '''
+  if len(list_misclassified_images) == 0: return
+  
+
+  bool_image_name_present = False
+  if len(list_misclassified_images[0]) > 3:
+    bool_image_name_present = True
+
+  figure = plt.figure(figsize = (10,5))
+  for index in range(1, len(list_misclassified_images) + 1):
+      plt.subplot(2, int(len(list_misclassified_images)/2), index)
+      plt.axis('off')
+      image = np.transpose(list_misclassified_images[index-1][0], (1, 2, 0))
+      # plt.imshow(list_misclassified_images[index-1][0].cpu().numpy().squeeze(), cmap='gray_r')
+      plt.imshow(image, cmap='gray_r')
+      GT_label = labels[torch.argmax(list_misclassified_images[index-1][1]).item()]
+      Pred_Label = labels[list_misclassified_images[index-1][2].item()]
+      # print(f'GT_value = {torch.argmax(list_misclassified_images[index-1][1]).item()} | Pred_value = {list_misclassified_images[index-1][2].item()}')
+      if bool_image_name_present:
+        file_name = list_misclassified_images[index-1][3].split('\\')[-1]
+        plt.title(f'{file_name}\nGT: {GT_label} \nPred: {Pred_Label}',fontdict={'fontname': 'Arial', 'fontsize': 6})
+      else:
+        plt.title(f'GT: {GT_label} \nPred: {Pred_Label} ')
+  plt.show()
+
 
 if __name__ == '__main__':
-  print(torch.tensor([1.,0]*10).view(-1,2))
+  # print(torch.tensor([1.,0]*10).view(-1,2))
   label_matrix = torch.eye(7)
   print(label_matrix)
-  for i in range(7):
-    print(label_matrix[i,:])
+  # for i in range(7):
+  #   print(label_matrix[i,:])
   
-  extract_zip_files('dataset\expwds','dataset\expwds')
+  # extract_zip_files('dataset\expwds','dataset\expwds')
 
   
