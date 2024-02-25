@@ -13,8 +13,8 @@ class RunConfig:
             self.IN_COLAB = True
         
         if self.IN_COLAB:
-            self.EPOCHS = 150
-            self.NUM_EPOCHS = 150  
+            self.EPOCHS = 75
+            self.NUM_EPOCHS = 75  
         # self.optimizer = None
         self.lr_strategy = None
         self.inital_lr = 0.005
