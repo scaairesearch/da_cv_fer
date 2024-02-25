@@ -293,8 +293,8 @@ def plot_misclassified_images (list_misclassified_images,
       Pred_Label = labels[list_misclassified_images[index-1][2].item()]
       # print(f'GT_value = {torch.argmax(list_misclassified_images[index-1][1]).item()} | Pred_value = {list_misclassified_images[index-1][2].item()}')
       if bool_image_name_present:
-        file_name = list_misclassified_images[index-1][3].split('\\')[-1]
-        plt.title(f'{file_name}\nGT: {GT_label} \nPred: {Pred_Label}',fontdict={'fontname': 'Arial', 'fontsize': 6})
+        file_name = list_misclassified_images[index-1][3].split(os.path.sep)[-1]
+        plt.title(f'{file_name}\nGT: {GT_label} \nPred: {Pred_Label}',fontdict={'fontsize': 6})
       else:
         plt.title(f'GT: {GT_label} \nPred: {Pred_Label} ')
   plt.show()
