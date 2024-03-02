@@ -71,20 +71,13 @@ class DANNBespoke(nn.Module):
         elif backbone =="resnet50":
             self.feature_extractor = resnet50(weights = ResNet50_Weights.DEFAULT)
         else:
-            a = mobilenet_v2(weights = MobileNet_V2_Weights.DEFAULT)
+            self.a = mobilenet_v2(weights = MobileNet_V2_Weights.DEFAULT)
 
-            # print("mobile net  ...\n",a )
+            # Recursively replace all convolutional layers with dropout-convolutional sequence
+            self._replace_conv_layers(self.a, dropout_prob = dropout)
 
-            # self.feature_extractor = nn.Sequential(*(list(mobilenet.children())[:-2]))
-            # # Add a Global Average Pooling (GAP) layer
-            # self.feature_extractor.add_module('GlobalAvgPool', nn.AdaptiveAvgPool2d(1))
-            # self.feature_extractor.add_module('Linear_Mobile_Net',nn.Linear(in_features=320, out_features=1000, bias=True))
+            self.feature_extractor = torch.nn.Sequential(*(list(self.a.children())[:-1]))
 
-            # self.feature_extractor = mobilenet_v2(weights = MobileNet_V2_Weights.DEFAULT)
-
-            self.feature_extractor = torch.nn.Sequential(*(list(a.children())[:-1]))
-
-            # print("mobile net before gap ...\n",self.feature_extractor )
 
             # Add a Global Average Pooling (GAP) layer
             self.feature_extractor.add_module('GlobalAvgPool', torch.nn.AdaptiveAvgPool2d(1))
@@ -146,6 +139,15 @@ class DANNBespoke(nn.Module):
         
         return
 
+    def _replace_conv_layers(self, module, dropout_prob):
+        for name, child in module.named_children():
+            if isinstance(child, nn.BatchNorm2d):
+                setattr(module, name, nn.Sequential(
+                    child,
+                    nn.Dropout2d(dropout_prob)
+                ))
+            else:
+                self._replace_conv_layers(child, dropout_prob) # recursion
 
     def forward(self, input_data, alpha = 0.0):
         features = self.feature_extractor(input_data)
