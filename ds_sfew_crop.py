@@ -325,13 +325,10 @@ class DatasetSFEWCROP():
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(255,255,255)) , # cut out white
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(255,255,255)) , # cut out white
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(255,255,255)) , # cut out white
-                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(255,255,255)) , # cut out white
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
                                         cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
-                                        cutout(mask_size=24,p=0.9,cutout_inside=False, mask_color=(0,0,0)), # cut out black
-
                                         transforms.ToTensor(),
                                         # transforms.Normalize(mean_ds, std_dev_ds)
                                         ])
