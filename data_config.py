@@ -36,10 +36,14 @@ class DataConfig:
         
         if self.IN_COLAB:
             # self.EXPW_BASE_PATH = Path(self.GDRIVE_FOLDER,'dataset') # for gdrive
+            self.PICKLE_IMAGE_LIST_PATH = Path(self.GDRIVE_FOLDER,'dataset','expw_raceds_image_list.pkl') # for gdrive
+            self.PICKLE_LIST_DICT_PATH = Path(self.GDRIVE_FOLDER,'dataset','expw_raceds_image_dict.pkl') # for gdrive
             self.GDRIVE_EXPW_FILE_PATH = Path(self.GDRIVE_FOLDER,'dataset','expwds','expwds.zip')
         else:   
             self.GDRIVE_EXPW_FILE_PATH = Path('dataset_2','expwds','expwds.zip') # for local
- 
+            self.PICKLE_IMAGE_LIST_PATH = Path('dataset','expw_raceds_image_list.pkl') # for local
+            self.PICKLE_LIST_DICT_PATH = Path('dataset','expw_raceds_image_dict.pkl') # for local
+        
         self.EXPW_BASE_PATH = 'dataset' # for local
         self.EXPW_EXTRACT_PATH = Path(self.EXPW_BASE_PATH,"expwds")
         self.EXPW_ZIP_FILE_PATH = Path(self.EXPW_EXTRACT_PATH,'expwds.zip')
@@ -48,8 +52,9 @@ class DataConfig:
         self.EXPW_LABEL_FILE_PATH = Path(self.EXPW_LABEL_PATH,'label.lst')
         self.EXPW_CROP_PATH = Path(self.EXPW_EXTRACT_PATH,'cropped')
         #011960f626b19ef4ab6e3f9ffe8ba027
-        self.EXPW_PARTIAL = 0.01 # Fraction of dataset to be used
+        self.EXPW_PARTIAL = 0.005 # Fraction of dataset to be used
         self.EXPW_TRAIN_TEST_SPLIT = 0.95
+        self.EXPW_VAL_DECISION = 'race' # 'race' or 'partial'
         self.EXPW_mean_ds = [0.3917, 0.3120, 0.2759]
         self.EXPW_std_dev_ds = [0.2205, 0.2134, 0.2277]
         if self.IN_COLAB:

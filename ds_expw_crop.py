@@ -1,6 +1,7 @@
 from typing import Any
 from data_config import DataConfig
 from torch.utils.data import Dataset,DataLoader
+import pickle
 
 import opendatasets as od
 from pathlib import Path
@@ -65,7 +66,7 @@ class DatasetEXPWCROP(Dataset):
         expw_label_dir = dataconfig.EXPW_LABEL_PATH
         expw_label_file = dataconfig.EXPW_LABEL_FILE_PATH
         self.expw_image_path = dataconfig.EXPW_DATA_PATH
-        EXPW_TRAIN_TEST_SPLIT = float(dataconfig.EXPW_TRAIN_TEST_SPLIT)
+        
 
         file = open(str(expw_label_file),"r")
         data = file.readlines()
@@ -89,33 +90,58 @@ class DatasetEXPWCROP(Dataset):
 
         self.labels=list(labels_map.values())
         self.label_matrix = torch.eye(len(self.labels)) # one hot matrix
+        
 
         # 2. splitting into train and val - 
-        # partial dataset if 
-        EXPW_PARTIAL = float(dataconfig.EXPW_PARTIAL)
+        self.list_img_label =[]
 
-        num_of_samples = int(len(image_label_dict)*EXPW_PARTIAL)
+        decision_val = dataconfig.EXPW_VAL_DECISION
+        if decision_val == 'race': # decision is based on race
+            try:
+                print("*** Starting creation of validation dataset based on RACE data ***")
+                
+                pickle_file_path = dataconfig.PICKLE_LIST_DICT_PATH
+                print("pickle_file_path", pickle_file_path)
+                with open(pickle_file_path, 'rb') as f:
+                    val_image_label_list_dict = pickle.load(f)
+                
+                # print("val list", val_image_label_list_dict[5:7], type(val_image_label_list_dict))
 
-        image_label_dict = dict(random.sample(image_label_dict.items(),num_of_samples))
+                if self.Train:
+                    full_list_dict = list(image_label_dict.items())
+                    set_full = set(full_list_dict)
+                    set_val = set(val_image_label_list_dict)
+                    self.list_img_label = list(set_full.difference(set_val))
 
-        #2b as per  the Train test Split
+                else:
+                    self.list_img_label = val_image_label_list_dict
 
-        total_im=len(image_label_dict)
-        num_train=int(len(image_label_dict)*EXPW_TRAIN_TEST_SPLIT)
-        num_val=total_im-num_train
+                print("*** Completed creation of validation dataset based on RACE data ***")
+            except Exception as e:
+                print("*** not able to create validation dataset based on RACE data ***")
+                print("Exception message:", str(e))
+                decision_val = 'partial'
 
-        full_list_dict = list(image_label_dict.items())
-        random.shuffle(full_list_dict)
 
-        # print(full_list_dict[:30])
+        if decision_val == 'partial': # decision is partial
+            # partial dataset if 
+            EXPW_PARTIAL = float(dataconfig.EXPW_PARTIAL)
+            num_of_samples = int(len(image_label_dict)*EXPW_PARTIAL)
+            image_label_dict = dict(random.sample(image_label_dict.items(),num_of_samples))
 
-        # self.train_list_dict = full_list_dict[:num_train]
-        # self.val_list_dict = full_list_dict[num_train:num_train+num_val]
+            #2b as per  the Train test Split
+            EXPW_TRAIN_TEST_SPLIT = float(dataconfig.EXPW_TRAIN_TEST_SPLIT)
+            total_im=len(image_label_dict)
+            num_train=int(len(image_label_dict)*EXPW_TRAIN_TEST_SPLIT)
+            num_val=total_im-num_train
 
-        if self.Train:
-            self.list_img_label = full_list_dict[:num_train]
-        else:
-            self.list_img_label = full_list_dict[num_train:]
+            full_list_dict = list(image_label_dict.items())
+            random.shuffle(full_list_dict)
+
+            if self.Train:
+                self.list_img_label = full_list_dict[:num_train]
+            else:
+                self.list_img_label = full_list_dict[num_train:]
 
         
         #  # 3. Creating Dataset Object
@@ -170,6 +196,7 @@ class DatasetEXPWCROP(Dataset):
         # img_name = list(self.list_img_label.keys())[idx]
         img_name = self.list_img_label[idx][0]
         label = self.list_img_label[idx][1]
+        # print("list_img_label[idx]  || label.......", self.list_img_label[idx], label)
         label_onehot = self.label_matrix[int(label),:]
 
         if self.crop_at_runtime:
@@ -249,7 +276,7 @@ class EXPWCROP():
             # if extract path is not there, we need to create 
             if not self.extract_path.exists():
                 # Create the directory
-                print( "in EXPW()...")
+                # print( "in EXPW()...")
                 self.extract_path.mkdir(parents=True, exist_ok=True)
                 print(f'Directory {self.extract_path} created successfully.')
             else:
