@@ -3,6 +3,8 @@ import torch
 import os
 class DataConfig:
     def __init__(self) -> None:
+        # SFEW STARTS    
+
         source = 'sfew'
         self.cuda = torch.cuda.is_available()
         
@@ -31,17 +33,37 @@ class DataConfig:
             self.SFEW_BATCH_SIZE = 4
         self.SFEW_TRANSFORMS = None #'A' # None or 'A'
         
+        # BALANCED SFEW STARTS
+
+        if self.IN_COLAB:
+            self.GDRIVE_SFEW_BALANCED_FILE_PATH = Path(self.GDRIVE_FOLDER,'dataset','Balanced_SFEW.zip')
+        else: 
+            self.GDRIVE_SFEW_BALANCED_FILE_PATH = Path('dataset_2','Balanced_SFEW.zip')
+
+        self.SFEW_BALANCED_BASE_PATH = 'dataset' # for local
+        
+        self.SFEW_BALANCED_EXTRACT_PATH = Path(self.SFEW_BALANCED_BASE_PATH,"balanced_SFEW")
+        self.SFEW_BALANCED_DATA_PATH = Path(self.SFEW_BALANCED_BASE_PATH,"balanced_SFEW", "Balanced_SFEW")
+
+        if self.IN_COLAB:
+            self.SFEW_BALANCED_BATCH_SIZE = 16
+        else:
+            self.SFEW_BALANCED_BATCH_SIZE = 4
+        # self.SFEW_BALANCED_TRANSFORMS = None #'A' # None or 'A'
+
+
+        # EXPW STARTS    
 
         self.EXPW_LINK = "https://www.kaggle.com/datasets/mohammedaaltaha/expwds"
         
         if self.IN_COLAB:
             # self.EXPW_BASE_PATH = Path(self.GDRIVE_FOLDER,'dataset') # for gdrive
-            self.PICKLE_IMAGE_LIST_PATH = Path(self.GDRIVE_FOLDER,'dataset','expw_raceds_image_list.pkl') # for gdrive
+            # self.PICKLE_IMAGE_LIST_PATH = Path(self.GDRIVE_FOLDER,'dataset','expw_raceds_image_list.pkl') # for gdrive
             self.PICKLE_LIST_DICT_PATH = Path(self.GDRIVE_FOLDER,'dataset','expw_raceds_image_dict.pkl') # for gdrive
             self.GDRIVE_EXPW_FILE_PATH = Path(self.GDRIVE_FOLDER,'dataset','expwds','expwds.zip')
         else:   
             self.GDRIVE_EXPW_FILE_PATH = Path('dataset_2','expwds','expwds.zip') # for local
-            self.PICKLE_IMAGE_LIST_PATH = Path('dataset','expw_raceds_image_list.pkl') # for local
+            # self.PICKLE_IMAGE_LIST_PATH = Path('dataset','expw_raceds_image_list.pkl') # for local
             self.PICKLE_LIST_DICT_PATH = Path('dataset','expw_raceds_image_dict.pkl') # for local
         
         self.EXPW_BASE_PATH = 'dataset' # for local
@@ -54,7 +76,7 @@ class DataConfig:
         #011960f626b19ef4ab6e3f9ffe8ba027
         self.EXPW_PARTIAL = 0.005 # Fraction of dataset to be used
         self.EXPW_TRAIN_TEST_SPLIT = 0.95
-        self.EXPW_VAL_DECISION = 'race' # 'race' or 'partial'
+        self.EXPW_VAL_DECISION = 'partial' # 'race' or 'partial'
         self.EXPW_mean_ds = [0.3917, 0.3120, 0.2759]
         self.EXPW_std_dev_ds = [0.2205, 0.2134, 0.2277]
         if self.IN_COLAB:
