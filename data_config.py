@@ -76,7 +76,7 @@ class DataConfig:
         #011960f626b19ef4ab6e3f9ffe8ba027
         self.EXPW_PARTIAL = 0.005 # Fraction of dataset to be used
         self.EXPW_TRAIN_TEST_SPLIT = 0.95
-        self.EXPW_VAL_DECISION = 'partial' # 'race' or 'partial'
+        self.EXPW_VAL_DECISION = 'race' # 'race' or 'partial'
         self.EXPW_mean_ds = [0.3917, 0.3120, 0.2759]
         self.EXPW_std_dev_ds = [0.2205, 0.2134, 0.2277]
         if self.IN_COLAB:
