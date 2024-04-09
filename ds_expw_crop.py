@@ -112,7 +112,7 @@ class DatasetEXPWCROP(Dataset):
                     full_list_dict = list(image_label_dict.items())
                     set_full = set(full_list_dict)
                     set_val = set(val_image_label_list_dict)
-                    self.list_img_label = random.sample(list(set_full.difference(set_val)),1500) # 1500 images sampled
+                    self.list_img_label = random.sample(list(set_full.difference(set_val)),1000) # 1000 images sampled
                     
 
                 else:
@@ -189,13 +189,18 @@ class DatasetEXPWCROP(Dataset):
             if flag_create_crop_contents:
                 # populate the directories
                 print("\n WARNING: It may take a long  time to crop the images, please be patient\n ")
+                list_failure_tuples = []
                 for image_label_tuple in self.list_img_label:
                     img_name = image_label_tuple[0]
                     img = Image.open(Path(self.expw_image_path,img_name)).convert("RGB")
                     img_save_path = os.path.join(self.crop_dir,img_name)
                     img_cropped = self.mtcnn(img,save_path = img_save_path)
+
+                    if img_cropped is None:
+                        list_failure_tuples.append(image_label_tuple)
                 
-                    
+                self.list_img_label= [tup for tup in self.list_img_label if tup not in list_failure_tuples]
+                print(f'{len(list_failure_tuples)} were not able to crop')
                 print(f'{len(os.listdir(self.crop_dir))} cropped images created in {os.path.basename(self.crop_dir)}')
 
     def __getitem__(self, idx):
