@@ -33,6 +33,7 @@ class DatasetEXPWCROP(Dataset):
             # self.mtcnn = MTCNN(image_size=224)
         else:
             # self.mtcnn = MTCNN(image_size=224, device= self.device)#MTCNN(image_size=224).to(device=self.device)#.to(device='cpu') # always wanted on CPU
+            print("---NOT CROPPING AT RUNTIME--")
             self.mtcnn = MTCNN(image_size=224).to(device='cpu') # always wanted on CPU
 
 
@@ -91,7 +92,7 @@ class DatasetEXPWCROP(Dataset):
         self.labels=list(labels_map.values())
         self.label_matrix = torch.eye(len(self.labels)) # one hot matrix
         
-
+        print(" before splitting : image_label_dict", len(image_label_dict))
         # 2. splitting into train and val - 
         self.list_img_label =[]
 
@@ -101,7 +102,7 @@ class DatasetEXPWCROP(Dataset):
                 print("*** Starting creation of validation dataset based on RACE data ***")
                 
                 pickle_file_path = dataconfig.PICKLE_LIST_DICT_PATH
-                print("pickle_file_path", pickle_file_path)
+                print("pickle_file_path: ", pickle_file_path)
                 with open(pickle_file_path, 'rb') as f:
                     val_image_label_list_dict = pickle.load(f)
                 
@@ -111,10 +112,13 @@ class DatasetEXPWCROP(Dataset):
                     full_list_dict = list(image_label_dict.items())
                     set_full = set(full_list_dict)
                     set_val = set(val_image_label_list_dict)
-                    self.list_img_label = list(set_full.difference(set_val))
+                    self.list_img_label = random.sample(list(set_full.difference(set_val)),1500) # 1500 images sampled
+                    
 
                 else:
                     self.list_img_label = val_image_label_list_dict
+                
+                print("size of dataset (list_img_label):", len(self.list_img_label))
 
                 print("*** Completed creation of validation dataset based on RACE data ***")
             except Exception as e:
@@ -143,7 +147,8 @@ class DatasetEXPWCROP(Dataset):
             else:
                 self.list_img_label = full_list_dict[num_train:]
 
-        
+
+            print("size of self.list_img_label :", len(self.list_img_label))
         #  # 3. Creating Dataset Object
         # self.mean_ds = dataconfig.EXPW_mean_ds
         # self.std_dev_ds = dataconfig.EXPW_mean_ds
@@ -163,6 +168,8 @@ class DatasetEXPWCROP(Dataset):
         if not self.crop_at_runtime:
             # self.mtcnn = MTCNN(image_size=224)#.to(device='cpu') # always wanted on CPU
             flag_create_crop_contents = False
+            print("---NOT CROPPING AT RUNTIME--, flag_create_crop_contents value:", flag_create_crop_contents)
+
             if not os.path.exists(self.crop_dir):# check if the directories are already present under expw
                 create_directory(self.crop_dir) # creates if not there
             if is_directory_empty(self.crop_dir): # check for contents inside them, if contents then exists else print that nothing in crop directory
@@ -220,7 +227,7 @@ class DatasetEXPWCROP(Dataset):
                 img = Image.open(Path(self.crop_dir,img_name))
             except:
                 img = Image.open(Path(self.expw_image_path,img_name))
-                # print(f'{img_name} : cropped image of not found, replacing with original image')
+                print(f'{img_name} : cropped image of not found, replacing with original image')
 
             if self.transform:
                 img_cropped = self.transform(img)
@@ -464,9 +471,6 @@ def get_expw_dataloaders(BATCH_SIZE = None):
     expw_val_loader = DataLoader(expw_valid_ds, **dataloader_args)
 
     return expw_train_loader, expw_val_loader
-
-
-
 
     
 if __name__ =='__main__':
