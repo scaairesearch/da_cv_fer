@@ -230,9 +230,10 @@ class DatasetEXPWCROP(Dataset):
         else:
             try: # it may be possible that not all images are cropped
                 img = Image.open(Path(self.crop_dir,img_name))
-            except:
+            except Exception as e:
                 img = Image.open(Path(self.expw_image_path,img_name))
                 print(f'{img_name} : cropped image of not found, replacing with original image')
+                print(f' The execption is {e}')
 
             if self.transform:
                 img_cropped = self.transform(img)
