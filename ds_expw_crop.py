@@ -124,7 +124,7 @@ class DatasetEXPWCROP(Dataset):
             except Exception as e:
                 print("*** not able to create validation dataset based on RACE data ***")
                 print("Exception message:", str(e))
-                decision_val = 'partial'
+                # decision_val = 'partial'
 
 
         if decision_val == 'partial': # decision is partial
