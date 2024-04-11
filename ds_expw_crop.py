@@ -99,32 +99,37 @@ class DatasetEXPWCROP(Dataset):
         decision_val = dataconfig.EXPW_VAL_DECISION
         if decision_val == 'race': # decision is based on race
             try:
-                print("*** Starting creation of validation dataset based on RACE data ***")
+                print("*** Starting creation of dataset based on RACE data ***")
                 
                 pickle_file_path = dataconfig.PICKLE_LIST_DICT_PATH
                 print("pickle_file_path: ", pickle_file_path)
                 with open(pickle_file_path, 'rb') as f:
                     val_image_label_list_dict = pickle.load(f)
                 
-                # print("val list", val_image_label_list_dict[5:7], type(val_image_label_list_dict))
+                # print("val list", val_image_label_list_dict[5:7], type(val_image_label_list_dict), len(val_image_label_list_dict))
 
                 if self.Train:
                     full_list_dict = list(image_label_dict.items())
                     set_full = set(full_list_dict)
                     set_val = set(val_image_label_list_dict)
                     self.list_img_label = random.sample(list(set_full.difference(set_val)),1000) # 1000 images sampled
+
+                    print("train list", self.list_img_label[5:7], type(self.list_img_label),len(self.list_img_label))
+
                     
 
                 else:
                     self.list_img_label = val_image_label_list_dict
+                    print("val list", self.list_img_label[5:7], type(self.list_img_label),len(self.list_img_label))
+
                 
                 print("size of dataset (list_img_label):", len(self.list_img_label))
 
-                print("*** Completed creation of validation dataset based on RACE data ***")
+                print("*** Completed creation of dataset based on RACE data ***")
             except Exception as e:
-                print("*** not able to create validation dataset based on RACE data ***")
+                print("*** not able to create dataset based on RACE data ***")
                 print("Exception message:", str(e))
-                # decision_val = 'partial'
+                decision_val = 'partial' # if race fails then partial works
 
 
         if decision_val == 'partial': # decision is partial
@@ -175,6 +180,20 @@ class DatasetEXPWCROP(Dataset):
             if is_directory_empty(self.crop_dir): # check for contents inside them, if contents then exists else print that nothing in crop directory
                 print(f'**** {self.crop_dir} is empty***')
                 flag_create_crop_contents = True
+            ##------------<added for val problem>--------------#
+            else: # if directory is not empty but the files are not present then we have to crop
+                if not self.Train:
+                    flag_create_crop_contents = True
+                else:
+                    flag_create_crop_contents = True
+                    for img_label in self.list_img_label:
+                        if os.path.isfile(os.path.join(self.crop_dir,img_label[0])): # if the files are present, we don't need to crop
+                            flag_create_crop_contents = False
+                            print("***The cropped files are present, no need to crop****", img_label)
+                            break # only checking for one instance
+            ##------------</added for val problem>--------------#
+
+                
 
             
             # for dir_name, dir_path in self.dict_crop_dataset.items():
@@ -560,10 +579,13 @@ if __name__ =='__main__':
     from ds_expw_crop import EXPWCROP
     expw_object = EXPWCROP(BATCH_SIZE=6, crop_at_runtime=False)
     expw_train_ds,expw_val_ds = expw_object.get_dataset()
-    expw_train_loader, expw_val_loader = expw_object.get_dataloader()
-    utils.show_batch(expw_train_loader,expw_train_ds.labels,6,normalized=False)
+    # expw_train_loader, expw_val_loader = expw_object.get_dataloader()
+    # utils.show_batch(expw_train_loader,expw_train_ds.labels,6,normalized=False)
 
-    images, labels,image_names = next(iter(expw_train_loader))
+    _, expw_val_loader = expw_object.get_dataloader()
+    # images, labels,image_names = next(iter(expw_train_loader))
+    images, labels,image_names = next(iter(expw_val_loader))
+
     print(images.shape, labels.shape, type(images), type(labels), type(image_names))
     print("data labels",labels)
     print("image_name\n", image_names)
