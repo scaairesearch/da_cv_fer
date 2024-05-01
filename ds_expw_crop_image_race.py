@@ -160,7 +160,8 @@ class DatasetEXPWIMAGECROPRACE(Dataset):
 
             if is_directory_empty(self.crop_dir): # check for contents inside them, if contents then exists else print that nothing in crop directory
                 print(f'**** {self.crop_dir} is empty***')
-                flag_create_crop_contents = True
+                if  self.Train:
+                    flag_create_crop_contents = True
 
             ##------------<added for val problem>--------------#
             else: # if directory is not empty but the relevant files are not present then we have to crop
