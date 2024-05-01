@@ -57,7 +57,7 @@ class DatasetEXPWIMAGECROPRACE(Dataset):
         
         image_label_dict = {} 
 
-        if not self.Train:
+        if self.Train:
             file = open(str(expw_label_file),"r")
             data = file.readlines()
             # image_label_dict = {} 
