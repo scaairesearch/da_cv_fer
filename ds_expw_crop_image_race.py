@@ -207,6 +207,7 @@ class DatasetEXPWIMAGECROPRACE(Dataset):
             race = self.expw_raceds_dict_list_selected[idx][1]
             label = self.expw_raceds_dict_list_selected[idx][2]
             label_onehot = self.label_matrix[int(label),:]
+            print("within __getitem__: ",self.labels_map[str(label)].capitalize(),race,img_name)
 
         if self.crop_at_runtime:
             img = Image.open(Path(self.expw_image_path,img_name))
@@ -243,7 +244,9 @@ class DatasetEXPWIMAGECROPRACE(Dataset):
             
             else:
                 emotion_folder = self.labels_map[str(label)].capitalize()
-                img = Image.open(Path(self.val_crop_folder_path,emotion_folder,race,img_name))# default as validation
+                full_image_path = Path(self.val_crop_folder_path,emotion_folder,race,img_name)
+                print("full_image_path: ", full_image_path)
+                img = Image.open(full_image_path)# default as validation
                 if self.transform:
                     img_cropped = self.transform(img)
                 else:
