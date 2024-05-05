@@ -248,19 +248,19 @@ class DatasetEXPWIMAGECROPRACE(Dataset):
                 emotion_folder = self.labels_map[str(label)].capitalize()
                 full_image_path = Path(self.val_crop_folder_path,emotion_folder,race,img_name)
                 print("full_image_path: ", full_image_path)
-                # img = Image.open(full_image_path)# default as validation, original
+                img = Image.open(full_image_path)# default as validation, original
                 
-                # Read the image using OpenCV
-                image_cv2 = cv2.imread(str(full_image_path))
+                # # Read the image using OpenCV
+                # image_cv2 = cv2.imread(str(full_image_path))
 
-                # Convert the image from BGR to RGB (OpenCV reads images in BGR format)
-                image_rgb = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2RGB)
+                # # Convert the image from BGR to RGB (OpenCV reads images in BGR format)
+                # image_rgb = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2RGB)
 
-                # Convert the image to bytes
-                image_bytes = cv2.imencode('.jpg', image_rgb)[1].tostring()
+                # # Convert the image to bytes
+                # image_bytes = cv2.imencode('.jpg', image_rgb)[1].tostring()
 
-                # Open the image using Pillow
-                img = Image.open(BytesIO(image_bytes))
+                # # Open the image using Pillow
+                # img = Image.open(BytesIO(image_bytes))
 
 
                 if self.transform:
